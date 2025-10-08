@@ -30,9 +30,17 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Evaluate Risk Score</ThemedText>
+        <ThemedText>
+          {`When you're ready, run `}
+          <ThemedText type="defaultSemiBold">Please navigate to the risk input form tab at the bottom of the screen to input your biomarker data</ThemedText>
+        </ThemedText>
+      </ThemedView>
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="defaultSemiBold">or alternatively you can also</ThemedText>
         <Link href="/modal">
           <Link.Trigger>
-            <ThemedText type="subtitle">Evaluate Risk Score</ThemedText>
+            <ThemedText type="subtitle">Click here if you wish to upload a lab report to be analysed.</ThemedText>
           </Link.Trigger>
           <Link.Preview />
           <Link.Menu>
@@ -52,20 +60,6 @@ export default function HomeScreen() {
             </Link.Menu>
           </Link.Menu>
         </Link>
-
-        <ThemedText>
-          {`Please navigate to the risk input form tab at the bottom of the screen to input your biomarker data`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
       </ThemedView>
     </ParallaxScrollView>
   );
