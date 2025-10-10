@@ -13,8 +13,8 @@ export default function HomeScreen() {
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
       headerImage={
         <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+          source={require('@/assets/images/placeholderLogo.png')}
+          style={styles.placeholderLogo}
         />
       }>
       <ThemedView style={styles.titleContainer}>
@@ -22,26 +22,25 @@ export default function HomeScreen() {
         <HelloWave />
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">The App’s Goal</ThemedText>
         <ThemedText>
-          Edit <ThemedText type="defaultSemiBold"> is to support earlier intervention and to encourage patients to be more proactive about their health
+          <ThemedText type="defaultSemiBold">The goal is to support earlier intervention and to encourage patients to be more proactive about their health
            by facilitating more efficient communication with their doctors during visits by providing predictive insights that a doctor might find useful.
-           </ThemedText>
+          </ThemedText>
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Evaluate Risk Score</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">Please navigate to the risk input form tab at the bottom of the screen to input your biomarker data</ThemedText>
-        </ThemedText>
+        <ThemedText type="defaultSemiBold">Please navigate to the risk input form tab at the bottom of the screen to input your biomarker data</ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="defaultSemiBold">or alternatively you can also</ThemedText>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Click here if you wish to upload a lab report to be analysed.</ThemedText>
-          </Link.Trigger>
+        {/*<Link href="/modal">
+          <Link.Trigger>*/}
+            <ThemedView style={styles.stepContainer}>
+              <ThemedText type="subtitle" style={styles.titleContainer}>Automatically Import Your Lab Test Results{"\n"}</ThemedText>
+              <Image source={require('@/assets/images/upload_fab.png')} style={styles.uploadButton}/>
+              <ThemedText type="defaultSemiBold" style={styles.buttonUnderText}>Upload a Lab Test Results File{"\n"}</ThemedText>
+            </ThemedView>
+          {/*</Link.Trigger>
           <Link.Preview />
           <Link.Menu>
             <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
@@ -59,7 +58,7 @@ export default function HomeScreen() {
               />
             </Link.Menu>
           </Link.Menu>
-        </Link>
+        </Link>*/}
       </ThemedView>
     </ParallaxScrollView>
   );
@@ -81,5 +80,23 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  buttonUnderText: {
+    gap: 8,
+    marginBottom: 8,
+    alignContent:'center',
+    alignSelf:'center'
+  },
+  uploadButton: {
+    height: 71,
+    width: 91,
+    gap: 2,
+    alignSelf:'center',
+  },
+  placeholderLogo: {
+    height: 255,
+    width: 307,
+    bottom: 0,
+    left: 0,
   },
 });
