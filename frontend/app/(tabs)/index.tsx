@@ -1,24 +1,32 @@
+import React, {useState} from 'react';
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, Pressable, View} from 'react-native';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+//import { Link } from 'expo-router';
+import UploadModal from "@/components/UploadModal";
+
+
 
 export default function HomeScreen() {
+  const [open, setOpen] = useState(false);
+  const [setLastFile] = useState<any>(null);
+  const isMobile = Platform.OS === 'android' || Platform.OS === 'ios';
+
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+      headerBackgroundColor={{ light: '#A1CEDC', dark: '#515050ff' }}
       headerImage={
         <Image
           source={require('@/assets/images/placeholderLogo.png')}
-          style={styles.placeholderLogo}
+          style={isMobile ? styles.placeholderLogoM : styles.placeholderLogo}
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Predictive Risk Web App</ThemedText>
+        <ThemedText type="title">Predictive Health Risk Assesment</ThemedText>
         <HelloWave />
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
@@ -30,15 +38,20 @@ export default function HomeScreen() {
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Evaluate Risk Score</ThemedText>
-        <ThemedText type="defaultSemiBold">Please navigate to the risk input form tab at the bottom of the screen to input your biomarker data</ThemedText>
+        <ThemedText type="defaultSemiBold">Navigate to the Risk tab at the bottom of the screen to input your biomarker data or upload a lab report to auto fill{"\n"}</ThemedText>
+        <ThemedText type="defaultSemiBold">If using from mobile device, you may use the camera tab to scan a lab report.{"\n"}</ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         {/*<Link href="/modal">
           <Link.Trigger>*/}
-            <ThemedView style={styles.stepContainer}>
-              <ThemedText type="subtitle" style={styles.titleContainer}>Automatically Import Your Lab Test Results{"\n"}</ThemedText>
-              <Image source={require('@/assets/images/upload_fab.png')} style={styles.uploadButton}/>
-              <ThemedText type="defaultSemiBold" style={styles.buttonUnderText}>Upload a Lab Test Results File{"\n"}</ThemedText>
+            <ThemedView style={{ alignItems: "center" }}>
+              <ThemedText type="subtitle" style={styles.titleContainer}>{"\n"}Automatically Import Your Lab Test Results{"\n"}</ThemedText>
+                <View>
+                  <Pressable onPress={() => setOpen(true)}>
+                    <Image source={require('@/assets/images/upload_fab.png')} style={styles.uploadButton}/>
+                    <ThemedText type="defaultSemiBold" style={styles.buttonUnderText}>Upload a Lab Test Results File{"\n"}</ThemedText>
+                  </Pressable>
+                </View>
             </ThemedView>
           {/*</Link.Trigger>
           <Link.Preview />
@@ -60,9 +73,21 @@ export default function HomeScreen() {
           </Link.Menu>
         </Link>*/}
       </ThemedView>
+      <UploadModal
+        visible={open}
+        onClose={() => setOpen(false)}
+        onSelected={(file) => {
+          if (file) {
+            setLastFile(file);
+            // TODO: send to backend with /ingest 
+          }
+        }}
+      />
     </ParallaxScrollView>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   titleContainer: {
@@ -82,7 +107,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   buttonUnderText: {
-    gap: 8,
+    gap: 16,
     marginBottom: 8,
     alignContent:'center',
     alignSelf:'center'
@@ -94,9 +119,14 @@ const styles = StyleSheet.create({
     alignSelf:'center',
   },
   placeholderLogo: {
-    height: 255,
-    width: 307,
+    height: '100%',
+    width: 305,
     bottom: 0,
     left: 0,
+  },
+  placeholderLogoM: {
+    height: '100%',
+    width: 305,
+    alignSelf:'center',
   },
 });
