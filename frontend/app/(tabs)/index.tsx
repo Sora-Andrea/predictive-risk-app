@@ -6,7 +6,6 @@ import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-//import { Link } from 'expo-router';
 import UploadModal from "@/components/UploadModal";
 
 
@@ -42,37 +41,16 @@ export default function HomeScreen() {
         <ThemedText type="defaultSemiBold">If using from mobile device, you may use the camera tab to scan a lab report.{"\n"}</ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
-        {/*<Link href="/modal">
-          <Link.Trigger>*/}
-            <ThemedView style={{ alignItems: "center" }}>
-              <ThemedText type="subtitle" style={styles.titleContainer}>{"\n"}Automatically Import Your Lab Test Results{"\n"}</ThemedText>
-                <View>
-                  <Pressable onPress={() => setOpen(true)}>
-                    <Image source={require('@/assets/images/upload_fab.png')} style={styles.uploadButton}/>
-                    <ThemedText type="defaultSemiBold" style={styles.buttonUnderText}>Upload a Lab Test Results File{"\n"}</ThemedText>
-                  </Pressable>
-                </View>
-            </ThemedView>
-          {/*</Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>*/}
-      </ThemedView>
+          <ThemedView style={{ alignItems: "center" }}>
+            <ThemedText type="subtitle" style={styles.titleContainer}>{"\n"}Automatically Import Your Lab Test Results{"\n"}</ThemedText>
+              <View>
+                <Pressable onPress={() => setOpen(true)}>
+                  <Image source={require('@/assets/images/upload_fab.png')} style={styles.uploadButton}/>
+                  <ThemedText type="defaultSemiBold" style={styles.buttonUnderText}>Upload a Lab Test Results File{"\n"}</ThemedText>
+                </Pressable>
+              </View>
+          </ThemedView>
+        </ThemedView>
       <UploadModal
         visible={open}
         onClose={() => setOpen(false)}

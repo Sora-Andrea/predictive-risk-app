@@ -74,7 +74,7 @@ export default function UploadModal({ visible, onClose, onSelected }: UploadModa
       <View
         style={{
           flex: 1,
-          backgroundColor: "#00000050",
+          backgroundColor: "#00000090",
           alignItems: "center",
           justifyContent: "flex-end",
         }}
@@ -90,7 +90,7 @@ export default function UploadModal({ visible, onClose, onSelected }: UploadModa
         >
           <ThemedText type="title">Upload a file</ThemedText>
           <ThemedText>
-            Supported formats: JPEG, PNG, or PDF)
+            Supported formats: JPEG, PNG, or PDF
           </ThemedText>
 
           <Pressable
