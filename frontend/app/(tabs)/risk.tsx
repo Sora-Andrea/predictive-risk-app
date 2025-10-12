@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, TextInput, Pressable } from "react-native";
 import axios from "axios";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -7,28 +7,76 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Fonts } from "@/constants/theme";
 import { API_URL } from "@/src/config";
+import { Ionicons } from "@expo/vector-icons";
+import { useOcrStore } from "@/src/store/useOcrStore";
 
 // Fields
 type FieldProps = {
   label: string;
+  abbr?: string;
   value: string;
   onChangeText: (t: string) => void;
   inputMode?: "text" | "numeric" | "decimal";
   placeholder?: string;
+  help?: string;
+  defaultOpen?: boolean; 
 };
 
 const Field = React.memo(function Field({
   label,
   value,
   onChangeText,
-  inputMode,
+  inputMode = "decimal",
   placeholder,
+  help,
+  defaultOpen = false,
 }: FieldProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
     <View style={{ marginBottom: 12 }}>
-      <ThemedText type="defaultSemiBold" style={{ marginBottom: 6 }}>
-        {label}
-      </ThemedText>
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+        <ThemedText type="defaultSemiBold" style={{ flex: 1 }}>
+          {label}
+        </ThemedText>
+
+        {help ? (
+          <Pressable
+            onPress={() => setOpen((v) => !v)}
+            accessibilityRole="button"
+            accessibilityLabel={open ? "Hide info" : "Show info"}
+            hitSlop={8}
+            style={{ paddingHorizontal: 4, paddingVertical: 2 }}
+          >
+          
+          <Ionicons
+            name={open ? "information-circle" : "information-circle-outline"}
+            size={18}
+            color="#6b7280"
+          />
+        </Pressable>
+      ) : null}
+    </View>
+
+      {/* Collapsible explination panel */}
+      {help && open ? (
+        <ThemedView
+          style={{
+            marginBottom: 6,
+            padding: 8,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: "#e5e7eb",
+            backgroundColor: "transparent",
+          }}
+        >
+          <ThemedText style={{ fontSize: 12, opacity: 0.8, lineHeight: 16 }}>
+            {help}
+          </ThemedText>
+        </ThemedView>
+      ) : null}
+
+      {/* Text input */}
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -49,18 +97,166 @@ const Field = React.memo(function Field({
   );
 });
 
-export default function ExploreScreen() {
-  const [age, setAge] = useState("45");
-  const [sex, setSex] = useState("male");
-  const [totalCholesterol, setTotalCholesterol] = useState("210");
-  const [hdl, setHdl] = useState("45");
-  const [systolicBp, setSystolicBp] = useState("130");
-  const [smoker, setSmoker] = useState("false");
 
+/* Sections */
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <ThemedView
+      style={{
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: "#e5e7eb",
+        marginBottom: 16,
+      }}
+    >
+      <ThemedText type="subtitle" style={{ marginBottom: 4 }}>
+        {title}
+      </ThemedText>
+      {description ? (
+        <ThemedText style={{ marginBottom: 10, opacity: 0.8 }}>{description}</ThemedText>
+      ) : null}
+      {children}
+    </ThemedView>
+  );
+}
+
+export default function ExploreScreen() {
+ 
+  const ocr = useOcrStore((s) => s.fields);
+  useEffect(() => {
+    console.log("Risk received OCR fields:", ocr);
+  }, [ocr]);
+ 
+  /* Demographic and Vitals */
+  const [age, setAge] = useState("");
+  const [sex, setSex] = useState("");
+  //blood pressure: The first number in a reading
+  const [systolicBp, setSystolicBp] = useState("");
+  const [smoker, setSmoker] = useState("");
+  
+  /* Lipids */
+  const [totalCholesterol, setTotalCholesterol] = useState("");
+  const [hdl, setHdl] = useState("");
+  const [ldl, setLdl] = useState("");
+  const [triglycerides, setTriglycerides] = useState("");
+  const [nonHdl, setNonHdl] = useState("");
+  const [cholHdlRatio, setCholHdlRatio] = useState("");
+
+  /* Complete Blood Count CBC */
+  // White Blood Cell count
+  const [wbc, setWbc] = useState("");
+  // Red Blood Cell count
+  const [rbc, setRbc] = useState("");
+  // Hemoglobin
+  const [hgb, setHgb] = useState("");
+  // Hematocrit
+  const [hct, setHct] = useState("");
+  // Mean Corpuscular Volume
+  const [mcv, setMcv] = useState("");
+  // Red Cell Distribution Width
+  const [rdw, setRdw] = useState("");
+  // Platelet count
+  const [plt, setPlt] = useState("");
+  // Mean Platelet Volume
+  const [mpv, setMpv] = useState("");
+  // WBC Differential
+  const [neut, setNeut] = useState("");
+  const [lymph, setLymph] = useState("");
+  const [mono, setMono] = useState("");
+  const [eos, setEos] = useState("");
+  const [baso, setBaso] = useState("");
+
+  /* CMP */
+  const [glucose, setGlucose] = useState(
+    ocr.glucose != null ? String(ocr.glucose) : ""
+  );
+  const [bun, setBun] = useState("");
+  const [creatinine, setCreatinine] = useState("");
+  const [albumin, setAlbumin] = useState("");
+  const [totalProtein, setTotalProtein] = useState("");
+  const [sodium, setSodium] = useState("");
+  const [potassium, setPotassium] = useState("");
+  const [chloride, setChloride] = useState("");
+  const [bicarbonate, setBicarbonate] = useState("");
+  const [alt, setAlt] = useState("");
+  const [ast, setAst] = useState("");
+  const [alp, setAlp] = useState("");
+  const [bilirubin, setBilirubin] = useState("");
+  const [calcium, setCalcium] = useState("");
+
+  /* Inflammation Marker */
+  const [crp, setCrp] = useState("");
+  
+  /* OCR -> populate fields */
+  useEffect(() => {
+    // Lipids
+    if (ocr.total_cholesterol != null) setTotalCholesterol(String(ocr.total_cholesterol));
+    if (ocr.hdl != null) setHdl(String(ocr.hdl));
+    if (ocr.ldl != null) setLdl(String(ocr.ldl));
+    if (ocr.triglycerides != null) setTriglycerides(String(ocr.triglycerides));
+    if (ocr.non_hdl != null) setNonHdl(String(ocr.non_hdl));
+    if (ocr.chol_hdl_ratio != null) setCholHdlRatio(String(ocr.chol_hdl_ratio));
+
+    // CMP
+    if (ocr.glucose != null) setGlucose(String(ocr.glucose));
+    if (ocr.bun != null) setBun(String(ocr.bun));
+    if (ocr.creatinine != null) setCreatinine(String(ocr.creatinine));
+    if (ocr.albumin != null) setAlbumin(String(ocr.albumin));
+    if (ocr.total_protein != null) setTotalProtein(String(ocr.total_protein));
+    if (ocr.sodium != null) setSodium(String(ocr.sodium));
+    if (ocr.potassium != null) setPotassium(String(ocr.potassium));
+    if (ocr.chloride != null) setChloride(String(ocr.chloride));
+    if (ocr.bicarbonate != null) setBicarbonate(String(ocr.bicarbonate));
+    if (ocr.alt != null) setAlt(String(ocr.alt));
+    if (ocr.ast != null) setAst(String(ocr.ast));
+    if (ocr.alp != null) setAlp(String(ocr.alp));
+    if (ocr.bilirubin != null) setBilirubin(String(ocr.bilirubin));
+    if (ocr.calcium != null) setCalcium(String(ocr.calcium));
+
+    // CBC
+    if (ocr.wbc != null) setWbc(String(ocr.wbc));
+    if (ocr.rbc != null) setRbc(String(ocr.rbc));
+    if (ocr.hgb != null) setHgb(String(ocr.hgb));
+    if (ocr.hct != null) setHct(String(ocr.hct));
+    if (ocr.mcv != null) setMcv(String(ocr.mcv));
+    if (ocr.rdw != null) setRdw(String(ocr.rdw));
+    if (ocr.plt != null) setPlt(String(ocr.plt));
+    if (ocr.mpv != null) setMpv(String(ocr.mpv));
+    if (ocr.neut != null) setNeut(String(ocr.neut));
+    if (ocr.lymph != null) setLymph(String(ocr.lymph));
+    if (ocr.mono != null) setMono(String(ocr.mono));
+    if (ocr.eos != null) setEos(String(ocr.eos));
+    if (ocr.baso != null) setBaso(String(ocr.baso));
+
+    // Inflammation
+    if (ocr.crp != null) setCrp(String(ocr.crp));
+  }, [ocr]);
+  
+  // Get Non-HDL and Chol/HDL ratio (better for calculating risk)
+  useEffect(() => {
+    // non-HDL = Total Chol - HDL 
+    const tc = parseFloat(totalCholesterol);
+    const h = parseFloat(hdl);
+    if (!isNaN(tc) && !isNaN(h)) setNonHdl(String(Math.max(0, tc - h)));
+    // Chol/HDL ratio
+    if (!isNaN(tc) && !isNaN(h) && h > 0) setCholHdlRatio((tc / h).toFixed(2));
+  }, [totalCholesterol, hdl]);
+  
+  
+  // Prediction Button
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
+ 
   const submit = async () => {
     setError(null);
     setResult(null);
@@ -99,11 +295,8 @@ export default function ExploreScreen() {
       <ThemedView style={styles.titleContainer}>
         <ThemedText
           type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}
-        >
-          Predictive Health Risk
+          style={{fontFamily: Fonts.rounded,}}>
+          Calculate My Health Risk
         </ThemedText>
       </ThemedView>
 
@@ -111,38 +304,86 @@ export default function ExploreScreen() {
         Enter your health data below to generate a risk assessment.
       </ThemedText>
 
+      {/* Demographics and Vitals */}
+      <Section title="Demographics / Vitals">
+        <Field label="Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
+        <Field label="Sex (male/female)" value={sex} onChangeText={setSex} inputMode="text" placeholder="male or female" />
+        <Field label="Systolic BP" value={systolicBp} onChangeText={setSystolicBp} inputMode="decimal" placeholder="e.g., 130" />
+        <Field label="Smoker (true/false)" value={smoker} onChangeText={setSmoker} inputMode="text" placeholder="true or false" />
+      </Section>
+
+      {/* CBC */}
+      <Section
+        title="Complete Blood Count (CBC)"
+        description="A CBC provides detailed information about blood cells; results can hint at inflammation or nutritional deficiencies."
+      >
+        <Field label="White Blood Cell count (WBC)" help="Leukocyte count." value={wbc} onChangeText={setWbc} />
+        <Field label="Red Blood Cell count (RBC)" value={rbc} onChangeText={setRbc} />
+        <Field label="Hemoglobin (Hgb)" help="Oxygen-carrying protein in red blood cells." value={hgb} onChangeText={setHgb} />
+        <Field label="Hematocrit (Hct)" help="Percent of blood volume occupied by RBCs." value={hct} onChangeText={setHct} />
+        <Field label="Mean Corpuscular Volume (MCV)" help="Average size of RBCs." value={mcv} onChangeText={setMcv} />
+        <Field label="Red Cell Distribution Width (RDW)" help="Variation in RBC size; sometimes RDW-CV." value={rdw} onChangeText={setRdw} />
+        <Field label="Platelet count (Plt)" value={plt} onChangeText={setPlt} />
+        <Field label="Mean Platelet Volume (MPV)" value={mpv} onChangeText={setMpv} />
+        <Field label="Neutrophils (%) (Neut)" help="WBC differential." value={neut} onChangeText={setNeut} />
+        <Field label="Lymphocytes (%) (Lymph)" value={lymph} onChangeText={setLymph} />
+        <Field label="Monocytes (%) (Mono)" value={mono} onChangeText={setMono} />
+        <Field label="Eosinophils (%) (Eos)" value={eos} onChangeText={setEos} />
+        <Field label="Basophils (%) (Baso)" value={baso} onChangeText={setBaso} />
+      </Section>
+
+      {/* CMP */}
+      <Section
+        title="Comprehensive Metabolic Panel (CMP)"
+        description="Evaluates organ function and electrolytes; core for metabolic and cardiovascular risk."
+      >
+        <Field label="Glucose" help="Fasting glucose key for T2D risk." value={glucose} onChangeText={setGlucose} />
+        <Field label="Blood Urea Nitrogen (BUN)" value={bun} onChangeText={setBun} />
+        <Field label="Creatinine" value={creatinine} onChangeText={setCreatinine} />
+        <Field label="Albumin" help="Low may indicate malnutrition or liver disease." value={albumin} onChangeText={setAlbumin} />
+        <Field label="Total Protein" value={totalProtein} onChangeText={setTotalProtein} />
+        <Field label="Sodium (Na)" value={sodium} onChangeText={setSodium} />
+        <Field label="Potassium (K)" value={potassium} onChangeText={setPotassium} />
+        <Field label="Chloride (Cl)" value={chloride} onChangeText={setChloride} />
+        <Field label="Bicarbonate (CO₂)" value={bicarbonate} onChangeText={setBicarbonate} />
+        <Field label="Alanine Aminotransferase (ALT)" help="Also Alanine Transaminase." value={alt} onChangeText={setAlt} />
+        <Field label="Aspartate Aminotransferase (AST)" help="Also Aspartate Transaminase." value={ast} onChangeText={setAst} />
+        <Field label="Alkaline Phosphatase (ALP)" value={alp} onChangeText={setAlp} />
+        <Field label="Bilirubin" help="Liver-processed waste product." value={bilirubin} onChangeText={setBilirubin} />
+        <Field label="Calcium (Ca)" value={calcium} onChangeText={setCalcium} />
+      </Section>
+
+      {/* Lipid Panel */}
+      <Section
+        title="Lipid Panel"
+        description="Fats and fatty substances; core predictors for cardiovascular risk."
+      >
+        <Field label="Total Cholesterol (TC)" value={totalCholesterol} onChangeText={setTotalCholesterol} />
+        <Field label="LDL Cholesterol (LDL-C)" value={ldl} onChangeText={setLdl} />
+        <Field label="HDL Cholesterol (HDL-C)" value={hdl} onChangeText={setHdl} />
+        <Field label="Triglycerides (TG)" value={triglycerides} onChangeText={setTriglycerides} />
+        <Field label="Non-HDL Cholesterol" help="Calculated: Total Chol (HDL)" value={nonHdl} onChangeText={setNonHdl} />
+        <Field label="Cholesterol : HDL Ratio" value={cholHdlRatio} onChangeText={setCholHdlRatio} />
+      </Section>
+
+      {/* Inflammation Marker */}
+      <Section
+        title="Inflammation marker"
+        description="high-sensitivity CRP links to heart disease risk."
+      >
+        <Field label="C-Reactive Protein (CRP)" value={crp} onChangeText={setCrp} />
+      </Section>
+
+
+{/* Old demo functionality */}
       <ThemedView
         style={{
           padding: 16,
           borderRadius: 12,
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: "#e5e7eb"
+          borderColor: "#e5e7eb",
         }}
       >
-        <Field label="Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
-        <Field label="Sex (male/female)" value={sex} onChangeText={setSex} placeholder="male or female" />
-        <Field
-          label="Total Cholesterol"
-          value={totalCholesterol}
-          onChangeText={setTotalCholesterol}
-          inputMode="decimal"
-          placeholder="e.g., 210"
-        />
-        <Field label="HDL" value={hdl} onChangeText={setHdl} inputMode="decimal" placeholder="e.g., 45" />
-        <Field
-          label="Systolic BP"
-          value={systolicBp}
-          onChangeText={setSystolicBp}
-          inputMode="decimal"
-          placeholder="e.g., 130"
-        />
-        <Field
-          label="Smoker (true/false)"
-          value={smoker}
-          onChangeText={setSmoker}
-          placeholder="true or false"
-        />
-
         <Pressable
           onPress={submit}
           style={{
@@ -150,19 +391,16 @@ export default function ExploreScreen() {
             paddingVertical: 12,
             borderRadius: 10,
             alignItems: "center",
-            marginTop: 8,
             opacity: loading ? 0.6 : 1,
           }}
           disabled={loading}
         >
           <ThemedText type="defaultSemiBold" style={{ color: "white" }}>
-            {loading ? "Predicting..." : "Predict"}
+            {loading ? "Predicting..." : "Predict (demo)"}
           </ThemedText>
         </Pressable>
 
-        {error && (
-          <ThemedText style={{ marginTop: 10, color: "#c62828" }}>{error}</ThemedText>
-        )}
+        {error && <ThemedText style={{ marginTop: 10, color: "#c62828" }}>{error}</ThemedText>}
 
         {result && (
           <ThemedView
@@ -171,18 +409,14 @@ export default function ExploreScreen() {
               padding: 12,
               borderRadius: 10,
               borderWidth: StyleSheet.hairlineWidth,
-              borderColor: "#e5e7eb"
+              borderColor: "#e5e7eb",
             }}
           >
             <ThemedText type="defaultSemiBold" style={{ marginBottom: 4 }}>
               Result
             </ThemedText>
             <ThemedText>Risk Score: {result.risk_score}</ThemedText>
-            <ThemedText>
-              Concern Level: {result.risk_level ?? result.risk_level}
-            </ThemedText>
-          
-
+            <ThemedText>Concern Level: {result.risk_level ?? result.risk_level}</ThemedText>
             <View
               style={{
                 marginTop: 10,
@@ -197,9 +431,9 @@ export default function ExploreScreen() {
                   width: `${Math.min(100, Math.max(0, (result.risk_score || 0) * 100))}%`,
                   height: "100%",
                   backgroundColor:
-                    (result.risk_level ?? result.risk_level) === "high"
+                    (result.risk_level) === "high"
                       ? "#c62828"
-                      : (result.risk_level ?? result.risk_level) === "moderate"
+                      : (result.risk_level) === "moderate"
                       ? "#f9a825"
                       : "#2e7d32",
                 }}
