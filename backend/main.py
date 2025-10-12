@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional, List
+from ocr_pipeline import process_image_bytes, process_pdf_bytes
 
 class PredictRequest(BaseModel):
     age: int
@@ -57,3 +59,38 @@ def predict(req: PredictRequest):
         concern_level = "moderate"
 
     return PredictResponse(risk_score=round(risk, 3), risk_level=concern_level)
+
+@app.post("/ingest")
+async def ingest(file: UploadFile = File(...)):
+    # Validate content type
+    allowed = {"image/jpeg", "image/png", "application/pdf"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Only JPEG, PNG, or PDF files are allowed.")
+
+    content = await file.read()
+
+    if file.content_type == "application/pdf":
+        # Render PDF pages at higher DPI and OCR each page
+        try:
+            out = process_pdf_bytes(content, dpi=400)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"PDF parse error: {e}")
+
+        return {
+            "fields": out["fields"],
+            "meta": out["meta"],
+            "raw_text": out["raw_text"],
+        }
+
+    else:
+        # JPEG or PNG
+        try:
+            out = process_image_bytes(content)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Image parse error: {e}")
+
+        return {
+            "fields": out["fields"],
+            "meta": out["meta"],
+            "raw_text": out["raw_text"],
+        }

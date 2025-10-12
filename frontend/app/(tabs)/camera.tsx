@@ -1,8 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Pressable, Image } from "react-native";
+import { View, StyleSheet, Pressable, Image, Alert } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import axios from "axios";
+import { API_URL } from "@/src/config";
+import { useOcrStore } from "@/src/store/useOcrStore";
+import { router } from "expo-router";
 
 /*
  Camera tab:
@@ -20,6 +24,7 @@ export default function CameraTab() {
   const cameraRef = useRef<CameraView>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [taking, setTaking] = useState(false);
+  const setOcrFields = useOcrStore((s) => s.setFields);
 
   useEffect(() => {
     if (!permission) return;
@@ -56,6 +61,28 @@ export default function CameraTab() {
         quality: 1.0
       });
       setPhotoUri(photo?.uri ?? null);
+      if (!photo?.uri) return;
+
+      // Build multipart form for backend OCR ingest
+      const form = new FormData();
+      // Provide sensible defaults for RN form-data
+      const file: any = {
+        uri: photo.uri,
+        name: "camera.jpg",
+        type: "image/jpeg",
+      };
+      form.append("file", file);
+
+      try {
+        const res = await axios.post(`${API_URL}/ingest`, form);
+        const fields = res.data?.fields || {};
+        setOcrFields(fields);
+        // Navigate to Risk tab to view populated fields
+        router.push("/risk");
+      } catch (err: any) {
+        console.log("Camera ingest error:", err?.message, err?.response?.data);
+        Alert.alert("OCR Error", err?.response?.data?.detail || err?.message || "Failed to process photo.");
+      }
     } finally {
       setTaking(false);
     }
@@ -74,7 +101,7 @@ export default function CameraTab() {
       </View>
 
       <View style={styles.controls}>
-        <PrimaryButton onPress={takePhoto} label={taking ? "Taking…" : "Take Photo"} disabled={taking} />
+        <PrimaryButton onPress={takePhoto} label={taking ? "Processing…" : "Take & Scan"} disabled={taking} />
       </View>
 
       {photoUri && (

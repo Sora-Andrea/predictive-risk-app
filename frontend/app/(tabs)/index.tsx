@@ -8,13 +8,16 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import UploadModal from "@/components/UploadModal";
 
-
+import axios from "axios";
+import { API_URL } from "@/src/config";
+import { useOcrStore } from "@/src/store/useOcrStore";
+import { router } from "expo-router";
 
 export default function HomeScreen() {
   const [open, setOpen] = useState(false);
-  const [setLastFile] = useState<any>(null);
   const isMobile = Platform.OS === 'android' || Platform.OS === 'ios';
-
+  const setOcrFields = useOcrStore((s) => s.setFields);
+ 
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#515050ff' }}
@@ -54,10 +57,34 @@ export default function HomeScreen() {
       <UploadModal
         visible={open}
         onClose={() => setOpen(false)}
-        onSelected={(file) => {
-          if (file) {
-            setLastFile(file);
-            // TODO: send to backend with /ingest 
+        onSelected={async (file) => {
+          if (!file) return;
+          
+          try {
+            const form = new FormData();
+            // Fetch(uri) and blob when mimeType
+            let data: any = { uri: file.uri, name: file.name, type: file.mimeType || "application/octet-stream" };
+
+            if (Platform.OS === "web") {
+              const blob = await (await fetch(file.uri)).blob();
+              data = new File([blob], file.name, { type: file.mimeType || blob.type });
+            }
+
+            form.append("file", data as any);
+
+            const res = await axios.post(`${API_URL}/ingest`, form, {
+            });
+
+            console.log("INGEST response:", res.data);  
+            const fields = res.data?.fields || {};
+            console.log("OCR fields parsed:", fields);
+
+            // store for the Risk tab
+            setOcrFields(fields);
+            // navigate to Risk tab
+            router.push("/risk");  
+          } catch (e: any) {
+            console.log("Upload error:", e?.message, e?.response?.data);
           }
         }}
       />
