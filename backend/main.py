@@ -1,14 +1,25 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
+
 from ocr_pipeline import process_image_bytes, process_pdf_bytes
+from ml.diabetes_infer import predict_diabetes_prob
+
+
+class DiabetesRiskPayload(BaseModel):
+    sex: Optional[str] = None
+    age: Optional[float] = None
+    bmi: Optional[float] = None
+    total_cholesterol: Optional[float] = None
+    triglycerides: Optional[float] = None
+    hdl: Optional[float] = None
+    ldl: Optional[float] = None
+    creatinine: Optional[float] = None
+    bun: Optional[float] = None
+
 
 class PredictRequest(BaseModel):
-    age: int
-    sex: str
-    total_cholesterol: float
-    hdl: float
     systolic_bp: float
     smoker: bool
 
@@ -16,7 +27,9 @@ class PredictResponse(BaseModel):
     risk_score: float
     risk_level: str
 
-app = FastAPI(title="Predictive Risk API", version="0.0.1")
+
+app = FastAPI(title="Predictive Risk API", version="0.0.2")
+DIABETES_MODEL_VERSION = "Logistic regression diabetes classifier"
 
 # Expo web on localhost)
 origins = [
@@ -33,32 +46,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.post("/predict_diabetes")
+def predict_diabetes(req: DiabetesRiskPayload):
+    try:
+        prob = predict_diabetes_prob(req.model_dump())
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=f"Model not available: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {exc}") from exc
+    return {"diabetes_prob": round(prob, 4), "model_version": DIABETES_MODEL_VERSION}
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-@app.post("/predict", response_model=PredictResponse)
-def predict(req: PredictRequest):
-    # Replace with a trained model later.
-    base = 0.05
-    base += (req.total_cholesterol - 180.0) * 0.0008
-    base += (req.systolic_bp - 120.0) * 0.001
-    base += - (req.hdl - 50.0) * 0.002
-    if req.smoker:
-        base += 0.06
-    if req.sex.lower() == "male":
-        base += 0.02
-    if req.age > 50:
-        base += 0.03
-
-    risk = max(0.0, min(1.0, base))
-    concern_level = "low"
-    if risk >= 0.20:
-        concern_level = "high"
-    elif risk >= 0.10:
-        concern_level = "moderate"
-
-    return PredictResponse(risk_score=round(risk, 3), risk_level=concern_level)
 
 @app.post("/ingest")
 async def ingest(file: UploadFile = File(...)):

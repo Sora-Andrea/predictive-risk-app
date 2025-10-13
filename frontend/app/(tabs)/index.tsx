@@ -69,10 +69,20 @@ export default function HomeScreen() {
               const blob = await (await fetch(file.uri)).blob();
               data = new File([blob], file.name, { type: file.mimeType || blob.type });
             }
-
+            
+            // On native, ensure a proper MIME type for backend allowlist
+            if (Platform.OS !== "web") {
+              if (!data.type || data.type === "application/octet-stream") {
+                const ext = (file.name || "").split(".").pop()?.toLowerCase();
+                if (ext === "jpg" || ext === "jpeg") data.type = "image/jpeg";
+                else if (ext === "png") data.type = "image/png";
+                else if (ext === "pdf") data.type = "application/pdf";
+              }
+            }
             form.append("file", data as any);
 
             const res = await axios.post(`${API_URL}/ingest`, form, {
+              headers: { "Content-Type": "multipart/form-data" },
             });
 
             console.log("INGEST response:", res.data);  
