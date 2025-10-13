@@ -65,16 +65,13 @@ export default function CameraTab() {
 
       // Build multipart form for backend OCR ingest
       const form = new FormData();
-      // Provide sensible defaults for RN form-data
-      const file: any = {
-        uri: photo.uri,
-        name: "camera.jpg",
-        type: "image/jpeg",
-      };
+      const file: any = { uri: photo.uri, name: "camera.jpg", type: "image/jpeg" };
       form.append("file", file);
 
       try {
-        const res = await axios.post(`${API_URL}/ingest`, form);
+        const res = await axios.post(`${API_URL}/ingest`, form, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
         const fields = res.data?.fields || {};
         setOcrFields(fields);
         // Navigate to Risk tab to view populated fields

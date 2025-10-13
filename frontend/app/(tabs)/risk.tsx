@@ -22,6 +22,11 @@ type FieldProps = {
   defaultOpen?: boolean; 
 };
 
+type DiabetesResult = {
+  diabetes_prob: number;
+  model_version: string;
+};
+
 const Field = React.memo(function Field({
   label,
   value,
@@ -139,6 +144,7 @@ export default function ExploreScreen() {
   /* Demographic and Vitals */
   const [age, setAge] = useState("");
   const [sex, setSex] = useState("");
+  const [bmi, setBmi] = useState("");
   //blood pressure: The first number in a reading
   const [systolicBp, setSystolicBp] = useState("");
   const [smoker, setSmoker] = useState("");
@@ -198,6 +204,7 @@ export default function ExploreScreen() {
   
   /* OCR -> populate fields */
   useEffect(() => {
+    if (ocr.bmi != null) setBmi(String(ocr.bmi));
     // Lipids
     if (ocr.total_cholesterol != null) setTotalCholesterol(String(ocr.total_cholesterol));
     if (ocr.hdl != null) setHdl(String(ocr.hdl));
@@ -253,7 +260,7 @@ export default function ExploreScreen() {
   
   
   // Prediction Button
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<DiabetesResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
  
@@ -262,23 +269,41 @@ export default function ExploreScreen() {
     setResult(null);
     setLoading(true);
     try {
-      const payload = {
-        age: parseInt(age, 10),
-        sex: sex,
-        total_cholesterol: parseFloat(totalCholesterol),
-        hdl: parseFloat(hdl),
-        systolic_bp: parseFloat(systolicBp),
-        smoker: smoker === "true",
+      const payload: Record<string, unknown> = {};
+      const addNumber = (key: string, value: string) => {
+        const num = parseFloat(value);
+        if (!Number.isNaN(num)) {
+          payload[key] = num;
+        }
       };
-      const res = await axios.post(`${API_URL}/predict`, payload);
+
+      const normalizedSex = sex.trim().toLowerCase();
+      if (normalizedSex) payload.sex = normalizedSex;
+
+      addNumber("age", age);
+      addNumber("bmi", bmi);
+      addNumber("total_cholesterol", totalCholesterol);
+      addNumber("triglycerides", triglycerides);
+      addNumber("hdl", hdl);
+      addNumber("ldl", ldl);
+      addNumber("creatinine", creatinine);
+      addNumber("bun", bun);
+
+      const res = await axios.post<DiabetesResult>(`${API_URL}/predict_diabetes`, payload);
       setResult(res.data);
     } catch (e: any) {
       console.log("Predict error:", e?.message);
-      setError(e?.message ?? "Request failed");
+      const detail = e?.response?.data?.detail;
+      setError((typeof detail === "string" && detail) || e?.message || "Request failed");
     } finally {
       setLoading(false);
     }
   };
+
+  const diabetesProb = result?.diabetes_prob ?? 0;
+  const diabetesPercent = Math.round(diabetesProb * 1000) / 10;
+  const diabetesSeverity =
+    diabetesProb >= 0.4 ? "high" : diabetesProb >= 0.25 ? "moderate" : "low";
 
   return (
     <ParallaxScrollView
@@ -301,13 +326,14 @@ export default function ExploreScreen() {
       </ThemedView>
 
       <ThemedText style={{ marginBottom: 16 }}>
-        Enter your health data below to generate a risk assessment.
+        Enter your health data below to generate a risk assessment. Anything with * is required.
       </ThemedText>
 
       {/* Demographics and Vitals */}
       <Section title="Demographics / Vitals">
-        <Field label="Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
-        <Field label="Sex (male/female)" value={sex} onChangeText={setSex} inputMode="text" placeholder="male or female" />
+        <Field label="*Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
+        <Field label="*Sex (male/female)" value={sex} onChangeText={setSex} inputMode="text" placeholder="male or female" />
+        <Field label="*Body Mass Index (BMI)" value={bmi} onChangeText={setBmi} inputMode="decimal" placeholder="e.g., 24.5" />
         <Field label="Systolic BP" value={systolicBp} onChangeText={setSystolicBp} inputMode="decimal" placeholder="e.g., 130" />
         <Field label="Smoker (true/false)" value={smoker} onChangeText={setSmoker} inputMode="text" placeholder="true or false" />
       </Section>
@@ -338,8 +364,8 @@ export default function ExploreScreen() {
         description="Evaluates organ function and electrolytes; core for metabolic and cardiovascular risk."
       >
         <Field label="Glucose" help="Fasting glucose key for T2D risk." value={glucose} onChangeText={setGlucose} />
-        <Field label="Blood Urea Nitrogen (BUN)" value={bun} onChangeText={setBun} />
-        <Field label="Creatinine" value={creatinine} onChangeText={setCreatinine} />
+        <Field label="*Blood Urea Nitrogen (BUN)" value={bun} onChangeText={setBun} />
+        <Field label="*Creatinine" value={creatinine} onChangeText={setCreatinine} />
         <Field label="Albumin" help="Low may indicate malnutrition or liver disease." value={albumin} onChangeText={setAlbumin} />
         <Field label="Total Protein" value={totalProtein} onChangeText={setTotalProtein} />
         <Field label="Sodium (Na)" value={sodium} onChangeText={setSodium} />
@@ -358,10 +384,10 @@ export default function ExploreScreen() {
         title="Lipid Panel"
         description="Fats and fatty substances; core predictors for cardiovascular risk."
       >
-        <Field label="Total Cholesterol (TC)" value={totalCholesterol} onChangeText={setTotalCholesterol} />
-        <Field label="LDL Cholesterol (LDL-C)" value={ldl} onChangeText={setLdl} />
-        <Field label="HDL Cholesterol (HDL-C)" value={hdl} onChangeText={setHdl} />
-        <Field label="Triglycerides (TG)" value={triglycerides} onChangeText={setTriglycerides} />
+        <Field label="*Total Cholesterol (TC)" value={totalCholesterol} onChangeText={setTotalCholesterol} />
+        <Field label="*LDL Cholesterol (LDL-C)" value={ldl} onChangeText={setLdl} />
+        <Field label="*HDL Cholesterol (HDL-C)" value={hdl} onChangeText={setHdl} />
+        <Field label="*Triglycerides (TG)" value={triglycerides} onChangeText={setTriglycerides} />
         <Field label="Non-HDL Cholesterol" help="Calculated: Total Chol (HDL)" value={nonHdl} onChangeText={setNonHdl} />
         <Field label="Cholesterol : HDL Ratio" value={cholHdlRatio} onChangeText={setCholHdlRatio} />
       </Section>
@@ -396,7 +422,7 @@ export default function ExploreScreen() {
           disabled={loading}
         >
           <ThemedText type="defaultSemiBold" style={{ color: "white" }}>
-            {loading ? "Predicting..." : "Predict (demo)"}
+            {loading ? "Calculating..." : "Estimate Risk Probability"}
           </ThemedText>
         </Pressable>
 
@@ -415,8 +441,10 @@ export default function ExploreScreen() {
             <ThemedText type="defaultSemiBold" style={{ marginBottom: 4 }}>
               Result
             </ThemedText>
-            <ThemedText>Risk Score: {result.risk_score}</ThemedText>
-            <ThemedText>Concern Level: {result.risk_level ?? result.risk_level}</ThemedText>
+            <ThemedText>
+              Diabetes Probability: {diabetesPercent.toFixed(1)}%
+            </ThemedText>
+            <ThemedText>Risk Level: {diabetesSeverity}</ThemedText>
             <View
               style={{
                 marginTop: 10,
@@ -428,12 +456,12 @@ export default function ExploreScreen() {
             >
               <View
                 style={{
-                  width: `${Math.min(100, Math.max(0, (result.risk_score || 0) * 100))}%`,
+                  width: `${Math.min(100, Math.max(0, diabetesProb * 100))}%`,
                   height: "100%",
                   backgroundColor:
-                    (result.risk_level) === "high"
+                    diabetesSeverity === "high"
                       ? "#c62828"
-                      : (result.risk_level) === "moderate"
+                      : diabetesSeverity === "moderate"
                       ? "#f9a825"
                       : "#2e7d32",
                 }}

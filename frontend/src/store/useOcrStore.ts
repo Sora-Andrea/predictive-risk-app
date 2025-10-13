@@ -1,8 +1,11 @@
 import { create } from "zustand";
 
 // Canonical OCR fields the backend may produce
-// Keep optional; backend returns only what it finds.
+// Keeps optional: backend returns only what it finds.
 export type Fields = {
+  
+  bmi?: number;
+  
   // Lipids
   total_cholesterol?: number;
   hdl?: number;
@@ -10,7 +13,7 @@ export type Fields = {
   triglycerides?: number;
   non_hdl?: number;
   chol_hdl_ratio?: number;
-
+  
   // CMP
   glucose?: number;
   bun?: number;
@@ -26,7 +29,7 @@ export type Fields = {
   ast?: number;
   alp?: number;
   bilirubin?: number;
-
+  
   // CBC
   wbc?: number;
   rbc?: number;
@@ -41,7 +44,7 @@ export type Fields = {
   mono?: number;
   eos?: number;
   baso?: number;
-
+  
   // Inflammation
   crp?: number;
 };

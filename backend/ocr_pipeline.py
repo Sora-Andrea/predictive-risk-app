@@ -96,7 +96,7 @@ def _ensure_min_height(gray: np.ndarray, min_h: int = 1500) -> np.ndarray:
     return gray
 
 def _illumination_correction(gray: np.ndarray) -> np.ndarray:
-    # RemoveS background
+    # Removes background
     bg = cv2.GaussianBlur(gray, (0, 0), sigmaX=25, sigmaY=25)
     norm = cv2.divide(gray, bg, scale=255)
     return norm
@@ -133,7 +133,7 @@ def preprocess_pil(pil_img: Image.Image) -> np.ndarray:
 def ocr_to_text(img_bin: np.ndarray) -> str:
     return pytesseract.image_to_string(img_bin, lang="eng", config=TESS_CFG_BLOCK)
 
-# ======================= Parsing =====================================
+# Parsing
 VALUE = r"(?P<val>\d+(?:\.\d+)?)"
 UNIT = r"(?P<unit>mg\/?dL|mmol\/?L)"
 # tolerate "HDL: 45", "HDL 45", "HDL - 45"
@@ -149,12 +149,7 @@ def _build_compiled_patterns() -> Dict[str, re.Pattern]:
     pats = {}
     for canonical, variants in ALIASES.items():
         name_pat = r"(?:%s)" % "|".join(_alias_to_pattern(a) for a in variants)
-        # Common patterns
-        #   LABEL : 123 mg/dL
-        #   LABEL 123
-        #   LABEL 123 mmol/L
-        # Allow the value to appear anywhere to the right on the same line, since tables
-        # Separate columns with many spaces. Search from the start of line.
+        # Allow the value to appear anywhere to the right on the same line, since reports are often tables
         pattern = rf"{name_pat}.*?(?:{VALUE})?\s*(?:{UNIT})?"
         pats[canonical] = re.compile(pattern, flags=re.IGNORECASE)
     return pats
@@ -173,9 +168,6 @@ def _is_range_context(s: str) -> bool:
 
 def _extract_value_unit_from_line(s: str) -> Tuple[Optional[float], Optional[str]]:
     # Find the first standalone numeric value (not part of a range)
-    # if the line looks like a header with ranges/flags, skip.
-    # rows can include ranges too, avoid selecting those tokens.
-    # search left-to-right for a number that is not immediately part of a range token.
     for m in _NUMBER_RX.finditer(s):
         val_txt = m.group("val")
         # Look at a small window around the number to check for ranges
@@ -250,8 +242,7 @@ def parse_labs(text: str) -> Dict[str, float]:
 # API
 def process_image_bytes(b: bytes) -> Dict:
     
-    # Accepts JPEG/PNG bytes.
-    # Returns: dict(fields={}, raw_text=str, meta={...})
+    # Accepts JPEG/PNG. Returns: dict(fields={}, raw_text=str, meta={...})
     
     pil = Image.open(io.BytesIO(b))
     pre = preprocess_pil(pil)
