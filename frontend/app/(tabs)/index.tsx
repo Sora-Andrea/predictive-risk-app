@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import { Image } from 'expo-image';
-import { Platform, StyleSheet, Pressable, View} from 'react-native';
+import { Platform, StyleSheet, Pressable, View, Alert } from 'react-native';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
@@ -95,6 +95,8 @@ export default function HomeScreen() {
             router.push("/risk");  
           } catch (e: any) {
             console.log("Upload error:", e?.message, e?.response?.data);
+            const detail = e?.response?.data?.detail || e?.message || "Failed to process file.";
+            Alert.alert("Upload Error", String(detail));
           }
         }}
       />

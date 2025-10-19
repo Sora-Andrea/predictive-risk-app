@@ -5,7 +5,7 @@ from typing import Dict, Tuple, Optional
 
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 import pytesseract
 from pdf2image import convert_from_bytes
 from pdf2image.exceptions import PDFInfoNotInstalledError
@@ -247,8 +247,14 @@ def parse_labs(text: str) -> Dict[str, float]:
 def process_image_bytes(b: bytes) -> Dict:
     
     # Accepts JPEG/PNG. Returns: dict(fields={}, raw_text=str, meta={...})
-    
+
     pil = Image.open(io.BytesIO(b))
+    try:
+        # Correcting photo orientation using the EXIF rotation metadata (mobile bug fix)
+        pil = ImageOps.exif_transpose(pil)
+    except Exception:
+        # Ignore rotation error metadata issues; fallbacks to original orientation
+        pass
     pre = preprocess_pil(pil)
     text = ocr_to_text(pre)
     fields = parse_labs(text)
