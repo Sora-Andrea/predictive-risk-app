@@ -1,5 +1,6 @@
 import io
 import re
+import os
 from typing import Dict, Tuple, Optional
 
 import cv2
@@ -7,6 +8,9 @@ import numpy as np
 from PIL import Image
 import pytesseract
 from pdf2image import convert_from_bytes
+from pdf2image.exceptions import PDFInfoNotInstalledError
+
+os.environ["POPPLER_PATH"] = r"C:\Program Files\Poppler\poppler-25.07.0\Library\bin"
 
 # General printed text: one block, keep spaces, give DPI hint.
 TESS_CFG_BLOCK = "--oem 3 --psm 6 -c preserve_interword_spaces=1 -c user_defined_dpi=300"
@@ -255,11 +259,19 @@ def process_image_bytes(b: bytes) -> Dict:
     }
 
 def process_pdf_bytes(pdf_b: bytes, dpi: int = 400) -> Dict:
+    poppler_path = os.getenv("POPPLER_PATH") or os.getenv("POPPLER_BIN")
+    try:
+        if poppler_path:
+            pages = convert_from_bytes(pdf_b, fmt="png", dpi=dpi, poppler_path=poppler_path)
+        else:
+            pages = convert_from_bytes(pdf_b, fmt="png", dpi=dpi)
+    except PDFInfoNotInstalledError as exc:
+        raise RuntimeError(
+            "pdf2image: Poppler is required to process PDFs -> https://www.geeksforgeeks.org/python/convert-pdf-to-image-using-python/#"
+        ) from exc
     
     # Accepts PDF bytes. Renders each page to image, runs the same pipeline.
     # Returns merged fields (first wins) + raw text.
-    
-    pages = convert_from_bytes(pdf_b, fmt="png", dpi=dpi)
     merged: Dict[str, float] = {}
     texts = []
 
