@@ -2,7 +2,6 @@ import React, {useState} from 'react';
 import { Image } from 'expo-image';
 import { Platform, StyleSheet, Pressable, View, Alert } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -20,16 +19,31 @@ export default function HomeScreen() {
  
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#515050ff' }}
+      headerBackgroundGradient={{
+        light: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
+        dark: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
+        locations: [0, 0.25, 0.5, 0.75, 1] as const,
+      }}
       headerImage={
-        <Image
-          source={require('@/assets/images/placeholderLogo.png')}
-          style={isMobile ? styles.placeholderLogoM : styles.placeholderLogo}
-        />
+        <View
+          style={[
+            styles.headerImageContainer,
+            !isMobile && styles.headerImageContainerWeb,
+          ]}>
+          <Image
+            source={
+              isMobile
+                ? require('@/assets/images/placeholderLogoM.png')
+                : require('@/assets/images/placeholderLogo.png')
+            }
+            contentFit="contain"
+            contentPosition={isMobile ? 'center' : 'left center'}
+            style={styles.placeholderLogo}
+          />
+        </View>
       }>
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Predictive Health Risk Assesment</ThemedText>
-        <HelloWave />
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText>
@@ -135,15 +149,18 @@ const styles = StyleSheet.create({
     gap: 2,
     alignSelf:'center',
   },
-  placeholderLogo: {
+  headerImageContainer: {
+    width: '100%',
     height: '100%',
-    width: 305,
-    bottom: 0,
-    left: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
   },
-  placeholderLogoM: {
+  headerImageContainerWeb: {
+    alignItems: 'flex-start',
+  },
+  placeholderLogo: {
+    width: '100%',
     height: '100%',
-    width: 305,
-    alignSelf:'center',
   },
 });

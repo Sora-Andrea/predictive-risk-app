@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { StyleSheet, View, TextInput, Pressable } from "react-native";
+import { Platform, StyleSheet, View, TextInput, Pressable } from "react-native";
+import { Image } from "expo-image";
 import axios from "axios";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Fonts } from "@/constants/theme";
 import { API_URL } from "@/src/config";
 import { Ionicons } from "@expo/vector-icons";
@@ -213,6 +213,8 @@ export default function ExploreScreen() {
     console.log("Risk received OCR fields:", ocr);
   }, [ocr]);
  
+  const isMobile = Platform.OS === "android" || Platform.OS === "ios";
+ 
   /* Demographic and Vitals */
   const [age, setAge] = useState("");
   const [sex, setSex] = useState("");
@@ -401,14 +403,29 @@ export default function ExploreScreen() {
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: "#D0D0D0", dark: "#353636" }}
+      headerBackgroundGradient={{
+        light: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
+        dark: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
+        locations: [0, 0.25, 0.5, 0.75, 1] as const,
+      }}
       headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
+        <View
+          style={[
+            styles.headerImageContainer,
+            !isMobile && styles.headerImageContainerWeb,
+          ]}
+        >
+          <Image
+            source={
+              isMobile
+                ? require("@/assets/images/placeholderLogoM.png")
+                : require("@/assets/images/placeholderLogo.png")
+            }
+            contentFit="contain"
+            contentPosition={isMobile ? "center" : "left center"}
+            style={styles.placeholderLogo}
+          />
+        </View>
       }
     >
       <ThemedView style={styles.titleContainer}>
@@ -563,12 +580,6 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: "#808080",
-    bottom: -90,
-    left: -35,
-    position: "absolute",
-  },
   titleContainer: {
     flexDirection: "row",
     gap: 8,
@@ -617,5 +628,19 @@ const styles = StyleSheet.create({
   },
   indicatorStack: {
     gap: 12,
+  },
+  headerImageContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  headerImageContainerWeb: {
+    alignItems: "flex-start",
+  },
+  placeholderLogo: {
+    width: "100%",
+    height: "100%",
   },
 });

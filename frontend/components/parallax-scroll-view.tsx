@@ -1,4 +1,5 @@
 import type { PropsWithChildren, ReactElement } from 'react';
+import type { ColorValue } from 'react-native';
 import { StyleSheet } from 'react-native';
 import Animated, {
   interpolate,
@@ -6,6 +7,7 @@ import Animated, {
   useAnimatedStyle,
   useScrollOffset,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { ThemedView } from '@/components/themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -13,15 +15,26 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 
 const HEADER_HEIGHT = 250;
 
+type ColorStops = readonly [ColorValue, ColorValue, ...ColorValue[]];
+type LocationStops = readonly [number, number, ...number[]];
+
+type HeaderGradientConfig = {
+  light: ColorStops;
+  dark?: ColorStops;
+  locations?: LocationStops;
+};
+
 type Props = PropsWithChildren<{
   headerImage: ReactElement;
-  headerBackgroundColor: { dark: string; light: string };
+  headerBackgroundColor?: { dark: string; light: string };
+  headerBackgroundGradient?: HeaderGradientConfig;
 }>;
 
 export default function ParallaxScrollView({
   children,
   headerImage,
   headerBackgroundColor,
+  headerBackgroundGradient,
 }: Props) {
   const backgroundColor = useThemeColor({}, 'background');
   const colorScheme = useColorScheme() ?? 'light';
@@ -52,9 +65,32 @@ export default function ParallaxScrollView({
       <Animated.View
         style={[
           styles.header,
-          { backgroundColor: headerBackgroundColor[colorScheme] },
           headerAnimatedStyle,
         ]}>
+        {headerBackgroundGradient ? (
+          <LinearGradient
+            colors={
+              headerBackgroundGradient.dark && colorScheme === 'dark'
+                ? headerBackgroundGradient.dark
+                : headerBackgroundGradient.light
+            }
+            locations={headerBackgroundGradient.locations}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        ) : (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor:
+                  headerBackgroundColor?.[colorScheme] ?? 'transparent',
+              },
+            ]}
+          />
+        )}
         {headerImage}
       </Animated.View>
       <ThemedView style={styles.content}>{children}</ThemedView>
