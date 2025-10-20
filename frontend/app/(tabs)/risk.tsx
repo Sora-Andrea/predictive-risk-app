@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Platform, StyleSheet, View, TextInput, Pressable } from "react-native";
 import { Image } from "expo-image";
 import axios from "axios";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { Fonts } from "@/constants/theme";
+import { ThemedView } from "@/components/themed-view";
+import type Animated from "react-native-reanimated";
 import ScreenTransitionView from "@/components/ScreenTransitionView";
 import { API_URL } from "@/src/config";
 import { Ionicons } from "@expo/vector-icons";
@@ -209,6 +210,7 @@ function Section({
 
 export default function ExploreScreen() {
  
+  const scrollRef = useRef<Animated.ScrollView | null>(null);
   const ocr = useOcrStore((s) => s.fields);
   useEffect(() => {
     console.log("Risk received OCR fields:", ocr);
@@ -338,11 +340,26 @@ export default function ExploreScreen() {
   const [result, setResult] = useState<DiabetesResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const demographicsComplete = age.trim().length > 0 && sex.trim().length > 0;
+  const submitDisabled = loading || !demographicsComplete;
+
+  useEffect(() => {
+    if (!result && !error) {
+      return;
+    }
+    const timeout = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 120);
+    return () => clearTimeout(timeout);
+  }, [result, error]);
  
   const submit = async () => {
     setError(null);
     setResult(null);
     setLoading(true);
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 80);
     try {
       const payload: Record<string, unknown> = {};
       const addNumber = (key: string, value: string) => {
@@ -405,12 +422,13 @@ export default function ExploreScreen() {
   return (
     <ScreenTransitionView>
       <ParallaxScrollView
-      headerBackgroundGradient={{
-        light: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
-        dark: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
-        locations: [0, 0.25, 0.5, 0.75, 1] as const,
-      }}
-      headerImage={
+        ref={scrollRef}
+        headerBackgroundGradient={{
+          light: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
+          dark: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
+          locations: [0, 0.25, 0.5, 0.75, 1] as const,
+        }}
+        headerImage={
         <View
           style={[
             styles.headerImageContainer,
@@ -434,16 +452,16 @@ export default function ExploreScreen() {
         <ThemedText
           type="title"
           style={{fontFamily: Fonts.rounded,}}>
-          Calculate My Health Risk
+          Calculate Diabetes Risk
         </ThemedText>
       </ThemedView>
 
       <ThemedText style={{ marginBottom: 16 }}>
-        Enter your health data below to generate a risk assessment. Anything with * is required.
+        Please enter your health data below.{"\n"}Try to fill in all the fields for better accuracy.
       </ThemedText>
 
       {/* Demographics and Vitals */}
-      <Section title="Demographics / Vitals">
+      <Section title="Demographics">
         <Field label="*Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
         <Field label="*Sex (male/female)" value={sex} onChangeText={setSex} inputMode="text" placeholder="male or female" />
         <Field label="*Body Mass Index (BMI)" value={bmi} onChangeText={setBmi} inputMode="decimal" placeholder="e.g., 24.5" />
@@ -451,7 +469,7 @@ export default function ExploreScreen() {
         {/* <Field label="Smoker (true/false)" value={smoker} onChangeText={setSmoker} inputMode="text" placeholder="true or false" /> */}
       </Section>
 
-      {/* CBC */}
+      {/* CBC 
       <Section
         title="Complete Blood Count (CBC)"
         description="A CBC provides detailed information about blood cells; results can hint at inflammation or nutritional deficiencies."
@@ -469,17 +487,17 @@ export default function ExploreScreen() {
         <Field label="Monocytes (Mono)" help="Measured in %." value={mono} onChangeText={setMono} />
         <Field label="Eosinophils (Eos)" help="Measured in %." value={eos} onChangeText={setEos} />
         <Field label="Basophils (Baso)" help="Measured in %." value={baso} onChangeText={setBaso} />
-      </Section>
+      </Section>*/}
 
       {/* CMP */}
       <Section
         title="Comprehensive Metabolic Panel (CMP)"
         description="Evaluates organ function and electrolytes; core for metabolic and cardiovascular risk."
       >
-        <Field label="Glucose" help={"Measured in mg/dL\nFasting glucose key for T2D risk."} value={glucose} onChangeText={setGlucose} />
+        {/*<Field label="Glucose" help={"Measured in mg/dL\nFasting glucose key for T2D risk."} value={glucose} onChangeText={setGlucose} />*/}
         <Field label="*Blood Urea Nitrogen (BUN)" help="Measured in mg/dL." value={bun} onChangeText={setBun} />
         <Field label="*Creatinine" help="Measured in mg/dL." value={creatinine} onChangeText={setCreatinine} />
-        <Field label="Albumin" help={"Measured in g/dL\nLow may indicate malnutrition or liver disease."} value={albumin} onChangeText={setAlbumin} />
+        {/*<Field label="Albumin" help={"Measured in g/dL\nLow may indicate malnutrition or liver disease."} value={albumin} onChangeText={setAlbumin} />
         <Field label="Total Protein" help="Measured in g/dL." value={totalProtein} onChangeText={setTotalProtein} />
         <Field label="Sodium (Na)" help="Measured in mEq/L." value={sodium} onChangeText={setSodium} />
         <Field label="Potassium (K)" help="Measured in mEq/L." value={potassium} onChangeText={setPotassium} />
@@ -489,7 +507,7 @@ export default function ExploreScreen() {
         <Field label="Aspartate Aminotransferase (AST)" help={"Measured in U/L\nAlso Aspartate Transaminase."} value={ast} onChangeText={setAst} />
         <Field label="Alkaline Phosphatase (ALP)" help="Measured in IU/L." value={alp} onChangeText={setAlp} />
         <Field label="Bilirubin" help={"Measured in mg/dL\nLiver-processed waste product."} value={bilirubin} onChangeText={setBilirubin} />
-        <Field label="Calcium (Ca)" help="Measured in mg/dL." value={calcium} onChangeText={setCalcium} />
+        <Field label="Calcium (Ca)" help="Measured in mg/dL." value={calcium} onChangeText={setCalcium} />*/}
       </Section>
 
       {/* Lipid Panel */}
@@ -505,34 +523,40 @@ export default function ExploreScreen() {
         {/* <Field label="Cholesterol : HDL Ratio" help="Measured as a ratio." value={cholHdlRatio} onChangeText={setCholHdlRatio} /> */}
       </Section>
 
-      {/* Inflammation Marker */}
+      {/* Inflammation Marker 
       <Section
         title="Inflammation marker"
         description="high-sensitivity CRP links to heart disease risk."
       >
         <Field label="C-Reactive Protein (CRP)" help="Measured in mg/L." value={crp} onChangeText={setCrp} />
-      </Section>
+      </Section>*/}
 
 
-{/* Old demo functionality */}
+
       <ThemedView
         style={{
-          padding: 16,
+          padding: 8,
           borderRadius: 12,
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: "#e5e7eb",
+          borderColor: "Transparent",
         }}
       >
+        {!demographicsComplete && (
+          <ThemedText style={styles.demographicNotice}>
+            Fill in demographic information before continuing
+          </ThemedText>
+        )}
+
         <Pressable
           onPress={submit}
           style={{
-            backgroundColor: "blue",
+            backgroundColor: "#0891b2",
             paddingVertical: 12,
             borderRadius: 10,
             alignItems: "center",
-            opacity: loading ? 0.6 : 1,
+            opacity: submitDisabled ? 0.6 : 1,
           }}
-          disabled={loading}
+          disabled={submitDisabled}
         >
           <ThemedText type="defaultSemiBold" style={{ color: "white" }}>
             {loading ? "Calculating..." : "Estimate Risk Probability"}
@@ -587,6 +611,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     marginBottom: 10,
+  },
+  demographicNotice: {
+    marginBottom: 12,
+    textAlign: "center",
+    opacity: 0.8,
   },
   resultCard: {
     marginTop: 14,

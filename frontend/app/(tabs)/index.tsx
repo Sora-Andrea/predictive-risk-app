@@ -46,7 +46,7 @@ export default function HomeScreen() {
         </View>
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Predictive Health Risk Assesment</ThemedText>
+        <ThemedText type="title">Predictive Diabetes Risk Assesment</ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText>
@@ -56,9 +56,9 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Evaluate Risk Score</ThemedText>
-        <ThemedText type="defaultSemiBold">Navigate to the Risk tab at the bottom of the screen to input your biomarker data or upload a lab report to auto fill{"\n"}</ThemedText>
-        <ThemedText type="defaultSemiBold">If using from mobile device, you may use the camera tab to scan a lab report.{"\n"}</ThemedText>
+        <ThemedText type="subtitle">Getting a Risk Score</ThemedText>
+        <ThemedText type="defaultSemiBold">Navigate to the Risk tab at the bottom right of the screen to input your biomarker data manually or upload a lab report to auto fill{"\n"}</ThemedText>
+        <ThemedText type="defaultSemiBold">If using app from a mobile device, you may also use the camera tab to scan a lab report.{"\n"}</ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
           <ThemedView style={{ alignItems: "center" }}>

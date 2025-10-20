@@ -1,3 +1,4 @@
+import React, { forwardRef, useImperativeHandle } from 'react';
 import type { PropsWithChildren, ReactElement } from 'react';
 import type { ColorValue } from 'react-native';
 import { StyleSheet } from 'react-native';
@@ -30,16 +31,21 @@ type Props = PropsWithChildren<{
   headerBackgroundGradient?: HeaderGradientConfig;
 }>;
 
-export default function ParallaxScrollView({
-  children,
-  headerImage,
-  headerBackgroundColor,
-  headerBackgroundGradient,
-}: Props) {
+const ParallaxScrollView = forwardRef<Animated.ScrollView, Props>(function ParallaxScrollView(
+  {
+    children,
+    headerImage,
+    headerBackgroundColor,
+    headerBackgroundGradient,
+  },
+  ref
+) {
   const backgroundColor = useThemeColor({}, 'background');
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
+  useImperativeHandle(ref, () => scrollRef.current as Animated.ScrollView | null);
+
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -96,7 +102,9 @@ export default function ParallaxScrollView({
       <ThemedView style={styles.content}>{children}</ThemedView>
     </Animated.ScrollView>
   );
-}
+});
+
+export default ParallaxScrollView;
 
 const styles = StyleSheet.create({
   container: {
