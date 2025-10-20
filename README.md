@@ -43,7 +43,6 @@ A list of all packages for the front-end can me shown using the command 'npm lis
 
 
 **BIOMARKER CONTEXT USED FOR DETERMINING RELEVANT INPUT FIELDS**
-**(TODO: LOOK UP ALL REFERENCE RANGES BASED ON DEMOGRAPHIC)**
 
 **Red Cell Distribution Width (RDW)**
 
@@ -88,3 +87,7 @@ Platelets are tiny cell fragments involved in blood clotting.
 
 -   **Cardiovascular Disease:** Elevated platelet counts, even within the normal range, have been linked to increased arterial stiffness, which is a key risk factor for heart attack and stroke.
 -   **Metabolic Disease:** Platelets can be overproduced in people with diabetes, potentially leading to a higher risk of abnormal clotting and inflammation.
+
+
+**REFERENCE RANGES USED**
+[**https://www.accp.com/docs/sap/Lab_Values_Table_PSAP.pdf**](https://www.accp.com/docs/sap/Lab_Values_Table_PSAP.pdf)

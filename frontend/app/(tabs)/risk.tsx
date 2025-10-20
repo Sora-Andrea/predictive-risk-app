@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { StyleSheet, View, TextInput, Pressable } from "react-native";
 import axios from "axios";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -9,6 +9,7 @@ import { Fonts } from "@/constants/theme";
 import { API_URL } from "@/src/config";
 import { Ionicons } from "@expo/vector-icons";
 import { useOcrStore } from "@/src/store/useOcrStore";
+import BiomarkerIndicator, { BiomarkerIndicatorDatum } from "@/components/biomarker-indicator";
 
 // Fields
 type FieldProps = {
@@ -22,9 +23,50 @@ type FieldProps = {
   defaultOpen?: boolean; 
 };
 
+type BiomarkerStatus = {
+  value: number | null;
+  low: number | null;
+  high: number | null;
+  unit?: string | null;
+  status: "low" | "normal" | "high" | "unknown";
+};
+
 type DiabetesResult = {
   diabetes_prob: number;
   model_version: string;
+  biomarker_summary?: Record<string, BiomarkerStatus>;
+  normalized_sex?: string | null;
+};
+
+const BIOMARKER_ORDER = [
+  "total_cholesterol",
+  "triglycerides",
+  "hdl",
+  "ldl",
+  "creatinine",
+  "bun",
+] as const;
+
+const BIOMARKER_LABELS: Record<(typeof BIOMARKER_ORDER)[number], string> = {
+  total_cholesterol: "Total Cholesterol",
+  triglycerides: "Triglycerides",
+  hdl: "HDL Cholesterol",
+  ldl: "LDL Cholesterol",
+  creatinine: "Creatinine",
+  bun: "Blood Urea Nitrogen",
+};
+
+const SEVERITY_COLORS: Record<string, string> = {
+  high: "#c62828",
+  moderate: "#f9a825",
+  low: "#2e7d32",
+};
+
+const SEVERITY_LABELS: Record<string, string> = {
+  high: "High",
+  moderate: "Moderate",
+  low: "Low",
+  unknown: "Unknown",
 };
 
 const Field = React.memo(function Field({
@@ -37,6 +79,35 @@ const Field = React.memo(function Field({
   defaultOpen = false,
 }: FieldProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const isNumericLike = inputMode === "numeric" || inputMode === "decimal";
+
+  const handleChangeText = (text: string) => {
+    if (!isNumericLike) {
+      onChangeText(text);
+      return;
+    }
+    let sanitized = text.replace(/[^0-9.]/g, "");
+    if (inputMode === "numeric") {
+      sanitized = sanitized.replace(/\./g, "");
+    } else if (inputMode === "decimal") {
+      const firstDot = sanitized.indexOf(".");
+      if (firstDot !== -1) {
+        sanitized =
+          sanitized.slice(0, firstDot + 1) +
+          sanitized
+            .slice(firstDot + 1)
+            .replace(/\./g, "");
+      }
+    }
+    onChangeText(sanitized);
+  };
+
+  const keyboardType =
+    inputMode === "numeric"
+      ? "number-pad"
+      : inputMode === "decimal"
+      ? "decimal-pad"
+      : "default";
 
   return (
     <View style={{ marginBottom: 12 }}>
@@ -63,7 +134,7 @@ const Field = React.memo(function Field({
       ) : null}
     </View>
 
-      {/* Collapsible explination panel */}
+      {/* Collapsible help panel */}
       {help && open ? (
         <ThemedView
           style={{
@@ -84,8 +155,9 @@ const Field = React.memo(function Field({
       {/* Text input */}
       <TextInput
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={handleChangeText}
         inputMode={inputMode || "text"}
+        keyboardType={keyboardType}
         autoCorrect={false}
         autoCapitalize="none"
         placeholder={placeholder}
@@ -146,8 +218,8 @@ export default function ExploreScreen() {
   const [sex, setSex] = useState("");
   const [bmi, setBmi] = useState("");
   //blood pressure: The first number in a reading
-  const [systolicBp, setSystolicBp] = useState("");
-  const [smoker, setSmoker] = useState("");
+  // const [systolicBp, setSystolicBp] = useState("");
+  // const [smoker, setSmoker] = useState("");
   
   /* Lipids */
   const [totalCholesterol, setTotalCholesterol] = useState("");
@@ -303,7 +375,29 @@ export default function ExploreScreen() {
   const diabetesProb = result?.diabetes_prob ?? 0;
   const diabetesPercent = Math.round(diabetesProb * 1000) / 10;
   const diabetesSeverity =
-    diabetesProb >= 0.4 ? "high" : diabetesProb >= 0.25 ? "moderate" : "low";
+    diabetesProb >= 0.4 ? "high" : diabetesProb >= 0.25 ? "moderate" : diabetesProb > 0 ? "low" : "unknown";
+  const severityColor = SEVERITY_COLORS[diabetesSeverity] || "#1976d2";
+  const severityLabel = SEVERITY_LABELS[diabetesSeverity] || "Unknown";
+
+  const biomarkerData = useMemo<BiomarkerIndicatorDatum[]>(() => {
+    if (!result?.biomarker_summary) return [];
+    return BIOMARKER_ORDER.map((key) => {
+      const entry = result.biomarker_summary?.[key];
+      const value = entry?.value;
+      if (!entry || value === null || Number.isNaN(value)) return null;
+      return {
+        key,
+        label: BIOMARKER_LABELS[key],
+        low: entry.low ?? null,
+        high: entry.high ?? null,
+        value,
+        unit: entry.unit ?? null,
+        status: entry.status,
+      } as BiomarkerIndicatorDatum;
+    }).filter((item): item is BiomarkerIndicatorDatum => item !== null);
+  }, [result]);
+
+  const hasBiomarkerData = biomarkerData.length > 0;
 
   return (
     <ParallaxScrollView
@@ -334,8 +428,8 @@ export default function ExploreScreen() {
         <Field label="*Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
         <Field label="*Sex (male/female)" value={sex} onChangeText={setSex} inputMode="text" placeholder="male or female" />
         <Field label="*Body Mass Index (BMI)" value={bmi} onChangeText={setBmi} inputMode="decimal" placeholder="e.g., 24.5" />
-        <Field label="Systolic BP" value={systolicBp} onChangeText={setSystolicBp} inputMode="decimal" placeholder="e.g., 130" />
-        <Field label="Smoker (true/false)" value={smoker} onChangeText={setSmoker} inputMode="text" placeholder="true or false" />
+        {/* <Field label="Systolic BP (mmHg)" value={systolicBp} onChangeText={setSystolicBp} inputMode="decimal" placeholder="e.g., 130" /> */}
+        {/* <Field label="Smoker (true/false)" value={smoker} onChangeText={setSmoker} inputMode="text" placeholder="true or false" /> */}
       </Section>
 
       {/* CBC */}
@@ -343,19 +437,19 @@ export default function ExploreScreen() {
         title="Complete Blood Count (CBC)"
         description="A CBC provides detailed information about blood cells; results can hint at inflammation or nutritional deficiencies."
       >
-        <Field label="White Blood Cell count (WBC)" help="Leukocyte count." value={wbc} onChangeText={setWbc} />
-        <Field label="Red Blood Cell count (RBC)" value={rbc} onChangeText={setRbc} />
-        <Field label="Hemoglobin (Hgb)" help="Oxygen-carrying protein in red blood cells." value={hgb} onChangeText={setHgb} />
-        <Field label="Hematocrit (Hct)" help="Percent of blood volume occupied by RBCs." value={hct} onChangeText={setHct} />
-        <Field label="Mean Corpuscular Volume (MCV)" help="Average size of RBCs." value={mcv} onChangeText={setMcv} />
-        <Field label="Red Cell Distribution Width (RDW)" help="Variation in RBC size; sometimes RDW-CV." value={rdw} onChangeText={setRdw} />
-        <Field label="Platelet count (Plt)" value={plt} onChangeText={setPlt} />
-        <Field label="Mean Platelet Volume (MPV)" value={mpv} onChangeText={setMpv} />
-        <Field label="Neutrophils (%) (Neut)" help="WBC differential." value={neut} onChangeText={setNeut} />
-        <Field label="Lymphocytes (%) (Lymph)" value={lymph} onChangeText={setLymph} />
-        <Field label="Monocytes (%) (Mono)" value={mono} onChangeText={setMono} />
-        <Field label="Eosinophils (%) (Eos)" value={eos} onChangeText={setEos} />
-        <Field label="Basophils (%) (Baso)" value={baso} onChangeText={setBaso} />
+        <Field label="White Blood Cell count (WBC)" help={"Measured in 10^3/uL\nLeukocyte count."} value={wbc} onChangeText={setWbc} />
+        <Field label="Red Blood Cell count (RBC)" help="Measured in 10^6/uL." value={rbc} onChangeText={setRbc} />
+        <Field label="Hemoglobin (Hgb)" help={"Measured in g/dL\nOxygen-carrying protein in red blood cells."} value={hgb} onChangeText={setHgb} />
+        <Field label="Hematocrit (Hct)" help={"Measured in %\nPercent of blood volume occupied by RBCs."} value={hct} onChangeText={setHct} />
+        <Field label="Mean Corpuscular Volume (MCV)" help={"Measured in fL\nAverage size of RBCs."} value={mcv} onChangeText={setMcv} />
+        <Field label="Red Cell Distribution Width (RDW)" help={"Measured in %\nVariation in RBC size; sometimes RDW-CV."} value={rdw} onChangeText={setRdw} />
+        <Field label="Platelet count (Plt)" help="Measured in 10^3/uL." value={plt} onChangeText={setPlt} />
+        <Field label="Mean Platelet Volume (MPV)" help="Measured in fL." value={mpv} onChangeText={setMpv} />
+        <Field label="Neutrophils (Neut)" help={"Measured in %\nWBC differential."} value={neut} onChangeText={setNeut} />
+        <Field label="Lymphocytes (Lymph)" help="Measured in %." value={lymph} onChangeText={setLymph} />
+        <Field label="Monocytes (Mono)" help="Measured in %." value={mono} onChangeText={setMono} />
+        <Field label="Eosinophils (Eos)" help="Measured in %." value={eos} onChangeText={setEos} />
+        <Field label="Basophils (Baso)" help="Measured in %." value={baso} onChangeText={setBaso} />
       </Section>
 
       {/* CMP */}
@@ -363,20 +457,20 @@ export default function ExploreScreen() {
         title="Comprehensive Metabolic Panel (CMP)"
         description="Evaluates organ function and electrolytes; core for metabolic and cardiovascular risk."
       >
-        <Field label="Glucose" help="Fasting glucose key for T2D risk." value={glucose} onChangeText={setGlucose} />
-        <Field label="*Blood Urea Nitrogen (BUN)" value={bun} onChangeText={setBun} />
-        <Field label="*Creatinine" value={creatinine} onChangeText={setCreatinine} />
-        <Field label="Albumin" help="Low may indicate malnutrition or liver disease." value={albumin} onChangeText={setAlbumin} />
-        <Field label="Total Protein" value={totalProtein} onChangeText={setTotalProtein} />
-        <Field label="Sodium (Na)" value={sodium} onChangeText={setSodium} />
-        <Field label="Potassium (K)" value={potassium} onChangeText={setPotassium} />
-        <Field label="Chloride (Cl)" value={chloride} onChangeText={setChloride} />
-        <Field label="Bicarbonate (CO₂)" value={bicarbonate} onChangeText={setBicarbonate} />
-        <Field label="Alanine Aminotransferase (ALT)" help="Also Alanine Transaminase." value={alt} onChangeText={setAlt} />
-        <Field label="Aspartate Aminotransferase (AST)" help="Also Aspartate Transaminase." value={ast} onChangeText={setAst} />
-        <Field label="Alkaline Phosphatase (ALP)" value={alp} onChangeText={setAlp} />
-        <Field label="Bilirubin" help="Liver-processed waste product." value={bilirubin} onChangeText={setBilirubin} />
-        <Field label="Calcium (Ca)" value={calcium} onChangeText={setCalcium} />
+        <Field label="Glucose" help={"Measured in mg/dL\nFasting glucose key for T2D risk."} value={glucose} onChangeText={setGlucose} />
+        <Field label="*Blood Urea Nitrogen (BUN)" help="Measured in mg/dL." value={bun} onChangeText={setBun} />
+        <Field label="*Creatinine" help="Measured in mg/dL." value={creatinine} onChangeText={setCreatinine} />
+        <Field label="Albumin" help={"Measured in g/dL\nLow may indicate malnutrition or liver disease."} value={albumin} onChangeText={setAlbumin} />
+        <Field label="Total Protein" help="Measured in g/dL." value={totalProtein} onChangeText={setTotalProtein} />
+        <Field label="Sodium (Na)" help="Measured in mEq/L." value={sodium} onChangeText={setSodium} />
+        <Field label="Potassium (K)" help="Measured in mEq/L." value={potassium} onChangeText={setPotassium} />
+        <Field label="Chloride (Cl)" help="Measured in mEq/L." value={chloride} onChangeText={setChloride} />
+        <Field label="Bicarbonate (CO2)" help="Measured in mEq/L." value={bicarbonate} onChangeText={setBicarbonate} />
+        <Field label="Alanine Aminotransferase (ALT)" help={"Measured in U/L\nAlso Alanine Transaminase."} value={alt} onChangeText={setAlt} />
+        <Field label="Aspartate Aminotransferase (AST)" help={"Measured in U/L\nAlso Aspartate Transaminase."} value={ast} onChangeText={setAst} />
+        <Field label="Alkaline Phosphatase (ALP)" help="Measured in IU/L." value={alp} onChangeText={setAlp} />
+        <Field label="Bilirubin" help={"Measured in mg/dL\nLiver-processed waste product."} value={bilirubin} onChangeText={setBilirubin} />
+        <Field label="Calcium (Ca)" help="Measured in mg/dL." value={calcium} onChangeText={setCalcium} />
       </Section>
 
       {/* Lipid Panel */}
@@ -384,12 +478,12 @@ export default function ExploreScreen() {
         title="Lipid Panel"
         description="Fats and fatty substances; core predictors for cardiovascular risk."
       >
-        <Field label="*Total Cholesterol (TC)" value={totalCholesterol} onChangeText={setTotalCholesterol} />
-        <Field label="*LDL Cholesterol (LDL-C)" value={ldl} onChangeText={setLdl} />
-        <Field label="*HDL Cholesterol (HDL-C)" value={hdl} onChangeText={setHdl} />
-        <Field label="*Triglycerides (TG)" value={triglycerides} onChangeText={setTriglycerides} />
-        <Field label="Non-HDL Cholesterol" help="Calculated: Total Chol (HDL)" value={nonHdl} onChangeText={setNonHdl} />
-        <Field label="Cholesterol : HDL Ratio" value={cholHdlRatio} onChangeText={setCholHdlRatio} />
+        <Field label="*Total Cholesterol (TC)" help="Measured in mg/dL." value={totalCholesterol} onChangeText={setTotalCholesterol} />
+        <Field label="*LDL Cholesterol (LDL-C)" help="Measured in mg/dL." value={ldl} onChangeText={setLdl} />
+        <Field label="*HDL Cholesterol (HDL-C)" help="Measured in mg/dL." value={hdl} onChangeText={setHdl} />
+        <Field label="*Triglycerides (TG)" help="Measured in mg/dL." value={triglycerides} onChangeText={setTriglycerides} />
+        {/* <Field label="Non-HDL Cholesterol" help={"Measured in mg/dL\nCalculated: Total Chol (HDL)"} value={nonHdl} onChangeText={setNonHdl} /> */}
+        {/* <Field label="Cholesterol : HDL Ratio" help="Measured as a ratio." value={cholHdlRatio} onChangeText={setCholHdlRatio} /> */}
       </Section>
 
       {/* Inflammation Marker */}
@@ -397,7 +491,7 @@ export default function ExploreScreen() {
         title="Inflammation marker"
         description="high-sensitivity CRP links to heart disease risk."
       >
-        <Field label="C-Reactive Protein (CRP)" value={crp} onChangeText={setCrp} />
+        <Field label="C-Reactive Protein (CRP)" help="Measured in mg/L." value={crp} onChangeText={setCrp} />
       </Section>
 
 
@@ -429,44 +523,38 @@ export default function ExploreScreen() {
         {error && <ThemedText style={{ marginTop: 10, color: "#c62828" }}>{error}</ThemedText>}
 
         {result && (
-          <ThemedView
-            style={{
-              marginTop: 14,
-              padding: 12,
-              borderRadius: 10,
-              borderWidth: StyleSheet.hairlineWidth,
-              borderColor: "#e5e7eb",
-            }}
-          >
-            <ThemedText type="defaultSemiBold" style={{ marginBottom: 4 }}>
-              Result
+          <ThemedView style={styles.resultCard}>
+            <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+              Diabetes Prediction
             </ThemedText>
-            <ThemedText>
-              Diabetes Probability: {diabetesPercent.toFixed(1)}%
-            </ThemedText>
-            <ThemedText>Risk Level: {diabetesSeverity}</ThemedText>
-            <View
-              style={{
-                marginTop: 10,
-                height: 12,
-                backgroundColor: "#eee",
-                borderRadius: 8,
-                overflow: "hidden",
-              }}
-            >
-              <View
-                style={{
-                  width: `${Math.min(100, Math.max(0, diabetesProb * 100))}%`,
-                  height: "100%",
-                  backgroundColor:
-                    diabetesSeverity === "high"
-                      ? "#c62828"
-                      : diabetesSeverity === "moderate"
-                      ? "#f9a825"
-                      : "#2e7d32",
-                }}
-              />
+            <View style={[styles.probabilityPill, { backgroundColor: severityColor }]}>
+              <ThemedText style={styles.probabilityPercent}>
+                {diabetesPercent.toFixed(1)}%
+              </ThemedText>
             </View>
+            <ThemedText style={[styles.probabilityLabel, { color: severityColor }]}>
+              Risk Level: {severityLabel}
+            </ThemedText>
+
+            <ThemedText style={styles.modelVersionText}>
+              Model: {result.model_version}
+            </ThemedText>
+
+            {hasBiomarkerData ? (
+              <View style={styles.chartSection}>
+                <ThemedText type="defaultSemiBold" style={{ marginBottom: 6 }}>
+                  Key Biomarkers
+                </ThemedText>
+                <ThemedText style={styles.chartSubtext}>
+                  Range reference for {result.normalized_sex || "unspecified"} profile
+                </ThemedText>
+                <View style={styles.indicatorStack}>
+                  {biomarkerData.map((item) => (
+                    <BiomarkerIndicator key={item.key} datum={item} />
+                  ))}
+                </View>
+              </View>
+            ) : null}
           </ThemedView>
         )}
       </ThemedView>
@@ -485,5 +573,49 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     marginBottom: 10,
+  },
+  resultCard: {
+    marginTop: 14,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#e5e7eb",
+    backgroundColor: "Transparent",
+  },
+  probabilityPill: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  probabilityPercent: {
+    color: "white",
+    fontFamily: Fonts.sans,
+    fontWeight: "700",
+    fontSize: 24,
+  },
+  probabilityLabel: {
+    fontFamily: Fonts.sans,
+    fontWeight: "600",
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  modelVersionText: {
+    fontSize: 12,
+    opacity: 0.7,
+    marginBottom: 12,
+  },
+  chartSection: {
+    marginTop: 4,
+    gap: 8,
+  },
+  chartSubtext: {
+    fontSize: 12,
+    opacity: 0.7,
+    marginBottom: 12,
+  },
+  indicatorStack: {
+    gap: 12,
   },
 });
