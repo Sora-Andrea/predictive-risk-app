@@ -7,6 +7,7 @@ import axios from "axios";
 import { API_URL } from "@/src/config";
 import { useOcrStore } from "@/src/store/useOcrStore";
 import { router } from "expo-router";
+import ScreenTransitionView from "@/components/ScreenTransitionView";
 
 /*
  Camera tab:
@@ -86,7 +87,8 @@ export default function CameraTab() {
   };
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <ScreenTransitionView>
+      <ThemedView style={{ flex: 1 }}>
       <View style={styles.previewContainer}>
         <CameraView
           ref={cameraRef}
@@ -113,7 +115,8 @@ export default function CameraTab() {
           />
         </View>
       )}
-    </ThemedView>
+      </ThemedView>
+    </ScreenTransitionView>
   );
 }
 

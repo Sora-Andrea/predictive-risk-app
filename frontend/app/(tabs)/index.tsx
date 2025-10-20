@@ -6,6 +6,7 @@ import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import UploadModal from "@/components/UploadModal";
+import ScreenTransitionView from "@/components/ScreenTransitionView";
 
 import axios from "axios";
 import { API_URL } from "@/src/config";
@@ -14,11 +15,13 @@ import { router } from "expo-router";
 
 export default function HomeScreen() {
   const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const isMobile = Platform.OS === 'android' || Platform.OS === 'ios';
   const setOcrFields = useOcrStore((s) => s.setFields);
  
   return (
-    <ParallaxScrollView
+    <ScreenTransitionView>
+      <ParallaxScrollView
       headerBackgroundGradient={{
         light: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
         dark: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
@@ -61,9 +64,17 @@ export default function HomeScreen() {
           <ThemedView style={{ alignItems: "center" }}>
             <ThemedText type="subtitle" style={styles.titleContainer}>{"\n"}Automatically Import Your Lab Test Results{"\n"}</ThemedText>
               <View>
-                <Pressable onPress={() => setOpen(true)}>
+                <Pressable
+                  onPress={() => {
+                    if (!uploading) setOpen(true);
+                  }}
+                  style={{ opacity: uploading ? 0.6 : 1 }}
+                >
                   <Image source={require('@/assets/images/upload_fab.png')} style={styles.uploadButton}/>
-                  <ThemedText type="defaultSemiBold" style={styles.buttonUnderText}>Upload a Lab Test Results File{"\n"}</ThemedText>
+                  <ThemedText type="defaultSemiBold" style={styles.buttonUnderText}>
+                    {uploading ? "Processing..." : "Upload a Lab Test Results File"}
+                    {"\n"}
+                  </ThemedText>
                 </Pressable>
               </View>
           </ThemedView>
@@ -74,6 +85,7 @@ export default function HomeScreen() {
         onSelected={async (file) => {
           if (!file) return;
           
+          setUploading(true);
           try {
             const form = new FormData();
             // Fetch(uri) and blob when mimeType
@@ -111,10 +123,13 @@ export default function HomeScreen() {
             console.log("Upload error:", e?.message, e?.response?.data);
             const detail = e?.response?.data?.detail || e?.message || "Failed to process file.";
             Alert.alert("Upload Error", String(detail));
+          } finally {
+            setUploading(false);
           }
         }}
       />
-    </ParallaxScrollView>
+      </ParallaxScrollView>
+    </ScreenTransitionView>
   );
 }
 

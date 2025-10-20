@@ -6,6 +6,7 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Fonts } from "@/constants/theme";
+import ScreenTransitionView from "@/components/ScreenTransitionView";
 import { API_URL } from "@/src/config";
 import { Ionicons } from "@expo/vector-icons";
 import { useOcrStore } from "@/src/store/useOcrStore";
@@ -402,7 +403,8 @@ export default function ExploreScreen() {
   const hasBiomarkerData = biomarkerData.length > 0;
 
   return (
-    <ParallaxScrollView
+    <ScreenTransitionView>
+      <ParallaxScrollView
       headerBackgroundGradient={{
         light: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
         dark: ['#356290', '#1784B2', '#509fc3ff', '#1784B2', '#356290'] as const,
@@ -575,7 +577,8 @@ export default function ExploreScreen() {
           </ThemedView>
         )}
       </ThemedView>
-    </ParallaxScrollView>
+      </ParallaxScrollView>
+    </ScreenTransitionView>
   );
 }
 
