@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Pressable, Image, Alert } from "react-native";
+import { View, StyleSheet, Pressable, Image, Alert, useWindowDimensions } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -26,6 +26,28 @@ export default function CameraTab() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [taking, setTaking] = useState(false);
   const setOcrFields = useOcrStore((s) => s.setFields);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
+  const horizontalPadding = Math.max(screenWidth * 0.08, 24);
+  let previewWidth = screenWidth - horizontalPadding;
+  previewWidth = Math.max(Math.min(previewWidth, 720), 280);
+
+  const maxPreviewHeight = Math.max(screenHeight * 0.6, 320);
+  let previewHeight = previewWidth * (4 / 3);
+
+  if (previewHeight > maxPreviewHeight) {
+    previewHeight = maxPreviewHeight;
+    previewWidth = previewHeight * (3 / 4);
+  }
+
+  const guideWidth = previewWidth * 0.82;
+  const guideAspect = 11 / 8.5;
+  let guideHeight = guideWidth * guideAspect;
+  const guideHeightCap = previewHeight * 0.78;
+
+  if (guideHeight > guideHeightCap) {
+    guideHeight = guideHeightCap;
+  }
 
   useEffect(() => {
     if (!permission) return;
@@ -88,33 +110,34 @@ export default function CameraTab() {
 
   return (
     <ScreenTransitionView>
-      <ThemedView style={{ flex: 1 }}>
-      <View style={styles.previewContainer}>
-        <CameraView
-          ref={cameraRef}
-          style={styles.camera}
-          facing="back"
-          enableTorch={false}
-          zoom={0}
-        />
-      </View>
-
-      <View style={styles.controls}>
-        <PrimaryButton onPress={takePhoto} label={taking ? "Processing…" : "Take & Scan"} disabled={taking} />
-      </View>
-
-      {photoUri && (
-        <View style={styles.result}>
-          <ThemedText type="defaultSemiBold" style={{ marginBottom: 6 }}>
-            Last Photo
-          </ThemedText>
-          <Image
-            source={{ uri: photoUri }}
-            style={{ width: 160, height: 160, borderRadius: 12, backgroundColor: "#eee" }}
-            resizeMode="cover"
+      <ThemedView style={styles.screen}>
+        <View style={[styles.previewContainer, { width: previewWidth, height: previewHeight }]}>
+          <CameraView
+            ref={cameraRef}
+            style={styles.camera}
+            facing="back"
+            enableTorch={false}
+            zoom={0}
           />
+          <View pointerEvents="none" style={[styles.guide, { width: guideWidth, height: guideHeight }]} />
         </View>
-      )}
+
+        <View style={styles.controls}>
+          <PrimaryButton onPress={takePhoto} label={taking ? "Processing..." : "Take & Scan"} disabled={taking} />
+        </View>
+
+        {photoUri && (
+          <View style={styles.result}>
+            <ThemedText type="defaultSemiBold" style={{ marginBottom: 6 }}>
+              Last Photo
+            </ThemedText>
+            <Image
+              source={{ uri: photoUri }}
+              style={{ width: 160, height: 160, borderRadius: 12, backgroundColor: "#eee" }}
+              resizeMode="cover"
+            />
+          </View>
+        )}
       </ThemedView>
     </ScreenTransitionView>
   );
@@ -153,19 +176,26 @@ function PrimaryButton({
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
+    gap: 16,
+  },
   previewContainer: {
-    aspectRatio: 3 / 4,
-    width: "100%",
     backgroundColor: "#000",
+    borderRadius: 20,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   camera: {
-    flex: 1,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    overflow: "hidden",
+    width: "100%",
+    height: "100%",
   },
   controls: {
-    padding: 16,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -173,5 +203,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingBottom: 24,
     gap: 8,
+  },
+  guide: {
+    position: "absolute",
+    borderWidth: 2,
+    borderRadius: 16,
+    borderColor: "rgba(255,255,255,0.65)",
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
 });
