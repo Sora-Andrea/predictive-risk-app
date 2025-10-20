@@ -47,6 +47,15 @@ def load_data(path: Path) -> pd.DataFrame:
         .map(GENDER_MAP)
     )
     df["Gender"] = gender_norm.fillna(df["Gender"].astype(str).str.strip().str.lower())
+
+    # Convert dataset values to mg/dL
+    df["Chol"] = pd.to_numeric(df["Chol"], errors="coerce") * 38.67
+    df["HDL"] = pd.to_numeric(df["HDL"], errors="coerce") * 38.67
+    df["LDL"] = pd.to_numeric(df["LDL"], errors="coerce") * 38.67
+    df["TG"] = pd.to_numeric(df["TG"], errors="coerce") * 88.57
+    df["BUN"] = pd.to_numeric(df["BUN"], errors="coerce") * 2.8
+    df["Cr"] = pd.to_numeric(df["Cr"], errors="coerce") / 88.4
+
     # Ensuring the label column is numeric
     df[LABEL] = df[LABEL].astype(int)
     return df

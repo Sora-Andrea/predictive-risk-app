@@ -375,7 +375,7 @@ export default function ExploreScreen() {
   const diabetesProb = result?.diabetes_prob ?? 0;
   const diabetesPercent = Math.round(diabetesProb * 1000) / 10;
   const diabetesSeverity =
-    diabetesProb >= 0.4 ? "high" : diabetesProb >= 0.25 ? "moderate" : diabetesProb > 0 ? "low" : "unknown";
+    diabetesProb >= 0.45 ? "high" : diabetesProb >= 0.25 ? "moderate" : diabetesProb > 0 ? "low" : "unknown";
   const severityColor = SEVERITY_COLORS[diabetesSeverity] || "#1976d2";
   const severityLabel = SEVERITY_LABELS[diabetesSeverity] || "Unknown";
 
