@@ -71,6 +71,11 @@ const SEVERITY_LABELS: Record<string, string> = {
   unknown: "Unknown",
 };
 
+const SEX_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+] as const;
+
 const Field = React.memo(function Field({
   label,
   value,
@@ -463,7 +468,38 @@ export default function ExploreScreen() {
       {/* Demographics and Vitals */}
       <Section title="Demographics">
         <Field label="*Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
-        <Field label="*Sex (male/female)" value={sex} onChangeText={setSex} inputMode="text" placeholder="male or female" />
+        <View style={styles.sexFieldContainer}>
+          <ThemedText type="defaultSemiBold" style={styles.sexFieldLabel}>
+            *Sex
+          </ThemedText>
+          <View style={styles.sexRadioRow} accessibilityRole="radiogroup">
+            {SEX_OPTIONS.map((option) => {
+              const selected = sex === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  style={[
+                    styles.sexRadioOption,
+                    selected && styles.sexRadioOptionSelected,
+                  ]}
+                  onPress={() => setSex(option.value)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                >
+                  <View
+                    style={[
+                      styles.sexRadioCircle,
+                      selected && styles.sexRadioCircleSelected,
+                    ]}
+                  >
+                    {selected ? <View style={styles.sexRadioDot} /> : null}
+                  </View>
+                  <ThemedText style={styles.sexRadioLabel}>{option.label}</ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
         <Field label="*Body Mass Index (BMI)" value={bmi} onChangeText={setBmi} inputMode="decimal" placeholder="e.g., 24.5" />
         {/* <Field label="Systolic BP (mmHg)" value={systolicBp} onChangeText={setSystolicBp} inputMode="decimal" placeholder="e.g., 130" /> */}
         {/* <Field label="Smoker (true/false)" value={smoker} onChangeText={setSmoker} inputMode="text" placeholder="true or false" /> */}
@@ -616,6 +652,56 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: "center",
     opacity: 0.8,
+  },
+  sexFieldContainer: {
+    marginBottom: 12,
+  },
+  sexFieldLabel: {
+    marginBottom: 6,
+  },
+  sexRadioRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  sexRadioOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#d1d5db",
+    backgroundColor: "transparent",
+  },
+  sexRadioOptionSelected: {
+    borderColor: "#0891b2",
+    backgroundColor: "rgba(8, 145, 178, 0.08)",
+  },
+  sexRadioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#9ca3af",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  sexRadioCircleSelected: {
+    borderColor: "#0891b2",
+  },
+  sexRadioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#0891b2",
+  },
+  sexRadioLabel: {
+    fontFamily: Fonts.sans,
+    fontWeight: "600",
+    fontSize: 14,
   },
   resultCard: {
     marginTop: 14,
