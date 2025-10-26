@@ -467,6 +467,7 @@ export default function ExploreScreen() {
         </View>
       }
     >
+      {/*}
       <ThemedView style={styles.titleContainer}>
         <ThemedText
           type="title"
@@ -474,8 +475,9 @@ export default function ExploreScreen() {
           Calculate Diabetes Risk
         </ThemedText>
       </ThemedView>
+      {*/}
 
-      <ThemedText style={{ marginBottom: 16 }}>
+      <ThemedText style={{ marginBottom: 8 }}>
         Please enter your health data below.{"\n"}Try to fill in all the fields for better accuracy.
       </ThemedText>
 
