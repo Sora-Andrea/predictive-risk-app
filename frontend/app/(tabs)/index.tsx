@@ -45,24 +45,16 @@ export default function HomeScreen() {
           />
         </View>
       }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Predictive Diabetes Risk Assesment</ThemedText>
-      </ThemedView>
+
+        <ThemedText type="title">Diabetes Risk Assesment</ThemedText>
+      
       <ThemedView style={styles.stepContainer}>
-        <ThemedText>
-          <ThemedText type="defaultSemiBold">The goal is to support earlier intervention and to encourage patients to be more proactive about their health
-           by facilitating more efficient communication with their doctors during visits by providing predictive insights that a doctor might find useful.
-          </ThemedText>
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Getting a Risk Score</ThemedText>
-        <ThemedText type="defaultSemiBold">Navigate to the Risk tab at the bottom right of the screen to input your biomarker data manually or upload a lab report to auto fill{"\n"}</ThemedText>
-        <ThemedText type="defaultSemiBold">If using app from a mobile device, you may also use the camera tab to scan a lab report.{"\n"}</ThemedText>
+        <ThemedText type="defaultSemiBold">Navigate to the Risk tab at the bottom right of the screen to input your biomarker data manually or upload a lab report to auto fill.{"\n"}</ThemedText>
+        <ThemedText type="defaultSemiBold">On mobile devics, you may also use the camera tab to scan a lab report.{"\n"}</ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
           <ThemedView style={{ alignItems: "center" }}>
-            <ThemedText type="subtitle" style={styles.titleContainer}>{"\n"}Automatically Import Your Lab Test Results{"\n"}</ThemedText>
+            <ThemedText type="subtitle" style={styles.titleContainer}>{"\n"}Import Your Lab Test Results{"\n"}</ThemedText>
               <View>
                 <Pressable
                   onPress={() => {
@@ -71,9 +63,8 @@ export default function HomeScreen() {
                   style={{ opacity: uploading ? 0.6 : 1 }}
                 >
                   <Image source={require('@/assets/images/upload_fab.png')} style={styles.uploadButton}/>
-                  <ThemedText type="defaultSemiBold" style={styles.buttonUnderText}>
-                    {uploading ? "Processing..." : "Upload a Lab Test Results File"}
-                    {"\n"}
+                  <ThemedText type="defaultSemiBold" style={{textAlign: 'center'}}>
+                    {uploading ? "Processing..." : "Upload a Lab Test Report File\n(PDF,PNG or JPEG)"}
                   </ThemedText>
                 </Pressable>
               </View>
@@ -151,12 +142,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
-  },
-  buttonUnderText: {
-    gap: 16,
-    marginBottom: 8,
-    alignContent:'center',
-    alignSelf:'center'
   },
   uploadButton: {
     height: 71,

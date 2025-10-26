@@ -44,7 +44,7 @@ const ParallaxScrollView = forwardRef<Animated.ScrollView, Props>(function Paral
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
-  useImperativeHandle(ref, () => scrollRef.current as Animated.ScrollView | null);
+  useImperativeHandle(ref, () => scrollRef.current!);
 
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
