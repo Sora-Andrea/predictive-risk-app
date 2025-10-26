@@ -481,7 +481,7 @@ export default function ExploreScreen() {
 
       {/* Demographics and Vitals */}
       <Section title="Demographics">
-        <Field label="*Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
+        <Field label="Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
         <View style={styles.sexFieldContainer}>
           <ThemedText type="defaultSemiBold" style={styles.sexFieldLabel}>
             *Sex
@@ -514,7 +514,7 @@ export default function ExploreScreen() {
             })}
           </View>
         </View>
-        <Field label="*Body Mass Index (BMI)" value={bmi} onChangeText={setBmi} inputMode="decimal" placeholder="e.g., 24.5" />
+        <Field label="Body Mass Index (BMI)" value={bmi} onChangeText={setBmi} inputMode="decimal" placeholder="e.g., 24.5" />
         {/* <Field label="Systolic BP (mmHg)" value={systolicBp} onChangeText={setSystolicBp} inputMode="decimal" placeholder="e.g., 130" /> */}
         {/* <Field label="Smoker (true/false)" value={smoker} onChangeText={setSmoker} inputMode="text" placeholder="true or false" /> */}
       </Section>
@@ -545,8 +545,8 @@ export default function ExploreScreen() {
         description="Evaluates organ function and electrolytes; core for metabolic and cardiovascular risk."
       >
         {/*<Field label="Glucose" help={"Measured in mg/dL\nFasting glucose key for T2D risk."} value={glucose} onChangeText={setGlucose} />*/}
-        <Field label="*Blood Urea Nitrogen (BUN)" help="Measured in mg/dL." value={bun} onChangeText={setBun} />
-        <Field label="*Creatinine" help="Measured in mg/dL." value={creatinine} onChangeText={setCreatinine} />
+        <Field label="Blood Urea Nitrogen (BUN)" help="Measured in mg/dL." value={bun} onChangeText={setBun} />
+        <Field label="Creatinine" help="Measured in mg/dL." value={creatinine} onChangeText={setCreatinine} />
         {/*<Field label="Albumin" help={"Measured in g/dL\nLow may indicate malnutrition or liver disease."} value={albumin} onChangeText={setAlbumin} />
         <Field label="Total Protein" help="Measured in g/dL." value={totalProtein} onChangeText={setTotalProtein} />
         <Field label="Sodium (Na)" help="Measured in mEq/L." value={sodium} onChangeText={setSodium} />
@@ -565,10 +565,10 @@ export default function ExploreScreen() {
         title="Lipid Panel"
         description="Fats and fatty substances; core predictors for cardiovascular risk."
       >
-        <Field label="*Total Cholesterol (TC)" help="Measured in mg/dL." value={totalCholesterol} onChangeText={setTotalCholesterol} />
-        <Field label="*LDL Cholesterol (LDL-C)" help="Measured in mg/dL." value={ldl} onChangeText={setLdl} />
-        <Field label="*HDL Cholesterol (HDL-C)" help="Measured in mg/dL." value={hdl} onChangeText={setHdl} />
-        <Field label="*Triglycerides (TG)" help="Measured in mg/dL." value={triglycerides} onChangeText={setTriglycerides} />
+        <Field label="Total Cholesterol (TC)" help="Measured in mg/dL." value={totalCholesterol} onChangeText={setTotalCholesterol} />
+        <Field label="LDL Cholesterol (LDL-C)" help="Measured in mg/dL." value={ldl} onChangeText={setLdl} />
+        <Field label="HDL Cholesterol (HDL-C)" help="Measured in mg/dL." value={hdl} onChangeText={setHdl} />
+        <Field label="Triglycerides (TG)" help="Measured in mg/dL." value={triglycerides} onChangeText={setTriglycerides} />
         {/* <Field label="Non-HDL Cholesterol" help={"Measured in mg/dL\nCalculated: Total Chol (HDL)"} value={nonHdl} onChangeText={setNonHdl} /> */}
         {/* <Field label="Cholesterol : HDL Ratio" help="Measured as a ratio." value={cholHdlRatio} onChangeText={setCholHdlRatio} /> */}
       </Section>
