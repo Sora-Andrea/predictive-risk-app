@@ -12,6 +12,7 @@ import { API_URL } from "@/src/config";
 import { Ionicons } from "@expo/vector-icons";
 import { useOcrStore } from "@/src/store/useOcrStore";
 import BiomarkerIndicator, { BiomarkerIndicatorDatum } from "@/components/biomarker-indicator";
+import * as Print from "expo-print";
 
 // Fields
 type FieldProps = {
@@ -75,6 +76,86 @@ const SEX_OPTIONS = [
   { value: "male", label: "Male" },
   { value: "female", label: "Female" },
 ] as const;
+
+const buildPrintHtml = ({
+  probability,
+  severity,
+  modelVersion,
+  biomarkers,
+  profile,
+}: {
+  probability: string;
+  severity: string;
+  modelVersion: string;
+  biomarkers: BiomarkerIndicatorDatum[];
+  profile: string;
+}) => {
+  const formatRange = (low: number | null, high: number | null, unit?: string | null) => {
+    const unitText = unit ? ` ${unit}` : "";
+    if (low != null && high != null) {
+      return `${low} - ${high}${unitText}`;
+    }
+    if (low != null) {
+      return `>= ${low}${unitText}`;
+    }
+    if (high != null) {
+      return `<= ${high}${unitText}`;
+    }
+    return `Not provided`;
+  };
+
+  const biomarkerRows = biomarkers
+    .map((item) => {
+      const unit = item.unit ? ` ${item.unit}` : "";
+      const range = formatRange(item.low ?? null, item.high ?? null, item.unit ?? null);
+      const statusLabel = SEVERITY_LABELS[item.status] ?? item.status ?? "Unknown";
+      return `<tr>
+        <td>${item.label}</td>
+        <td>${item.value}${unit}</td>
+        <td>${range}</td>
+        <td>${statusLabel}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const biomarkerTable = biomarkers.length
+    ? `<h2 style="margin-top:24px;">Key Biomarkers</h2>
+       <table style="border-collapse:collapse;width:100%;font-size:14px;">
+         <thead>
+           <tr>
+             <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px;">Marker</th>
+             <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px;">Value</th>
+             <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px;">Reference Range (${profile})</th>
+             <th style="text-align:left;border-bottom:1px solid #ccc;padding:8px 4px;">Status</th>
+           </tr>
+         </thead>
+         <tbody>
+           ${biomarkerRows}
+         </tbody>
+       </table>`
+    : "";
+
+  return `<!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charSet="utf-8" />
+      <title>Diabetes Risk Results</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; margin: 24px; color: #1f2933; }
+        h1 { font-size: 24px; margin-bottom: 16px; }
+        p { margin: 8px 0; }
+        table td, table th { padding: 8px 4px; border-bottom: 1px solid #e5e7eb; }
+      </style>
+    </head>
+    <body>
+      <h1>Diabetes Risk Results</h1>
+      <p><strong>Risk Probability:</strong> ${probability}%</p>
+      <p><strong>Risk Level:</strong> ${severity}</p>
+      <p><strong>Model:</strong> ${modelVersion}</p>
+      ${biomarkerTable}
+    </body>
+  </html>`;
+};
 
 const Field = React.memo(function Field({
   label,
@@ -437,6 +518,35 @@ export default function ExploreScreen() {
   }, [result]);
 
   const hasBiomarkerData = biomarkerData.length > 0;
+  const referenceProfileLabel = result?.normalized_sex
+    ? `${result.normalized_sex.charAt(0).toUpperCase()}${result.normalized_sex.slice(1)}`
+    : "Unspecified";
+  const handlePrint = useCallback(async () => {
+    if (!result) {
+      return;
+    }
+
+    const html = buildPrintHtml({
+      probability: diabetesPercent.toFixed(1),
+      severity: severityLabel,
+      modelVersion: result.model_version,
+      biomarkers: biomarkerData,
+      profile: referenceProfileLabel,
+    });
+
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && typeof window.print === "function") {
+        window.print();
+      }
+      return;
+    }
+
+    try {
+      await Print.printAsync({ html });
+    } catch (err) {
+      console.warn("Print failed:", err);
+    }
+  }, [result, diabetesPercent, severityLabel, biomarkerData, referenceProfileLabel]);
 
   return (
     <ScreenTransitionView>
@@ -620,9 +730,20 @@ export default function ExploreScreen() {
 
         {result && (
           <ThemedView style={styles.resultCard}>
-            <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-              Diabetes Prediction
-            </ThemedText>
+            <View style={styles.resultHeader}>
+              <ThemedText type="defaultSemiBold" style={styles.resultHeaderTitle}>
+                Diabetes Prediction
+              </ThemedText>
+              <Pressable
+                onPress={handlePrint}
+                style={styles.printIconButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Print results"
+              >
+                <Ionicons name="print-outline" size={36} color="#9BA1A6" />
+              </Pressable>
+            </View>
             <View style={[styles.probabilityPill, { backgroundColor: severityColor }]}>
               <ThemedText style={styles.probabilityPercent}>
                 {diabetesPercent.toFixed(1)}%
@@ -642,7 +763,7 @@ export default function ExploreScreen() {
                   Key Biomarkers
                 </ThemedText>
                 <ThemedText style={styles.chartSubtext}>
-                  Range reference for {result.normalized_sex || "unspecified"} profile
+                  Range reference for {referenceProfileLabel.toLowerCase()} profile
                 </ThemedText>
                 <View style={styles.indicatorStack}>
                   {biomarkerData.map((item) => (
@@ -720,6 +841,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
+  resultHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  resultHeaderTitle: {
+    marginBottom: 0,
+  },
   resultCard: {
     marginTop: 14,
     padding: 16,
@@ -727,6 +857,9 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#e5e7eb",
     backgroundColor: "Transparent",
+  },
+  printIconButton: {
+    borderRadius: 16,
   },
   probabilityPill: {
     alignSelf: "flex-start",
