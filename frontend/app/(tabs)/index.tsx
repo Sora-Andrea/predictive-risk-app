@@ -63,8 +63,8 @@ export default function HomeScreen() {
                   style={{ opacity: uploading ? 0.6 : 1 }}
                 >
                   <Image source={require('@/assets/images/upload_fab.png')} style={styles.uploadButton}/>
-                  <ThemedText type="defaultSemiBold" style={{textAlign: 'center'}}>
-                    {uploading ? "Processing..." : "Upload a Lab Test Report File\n(PDF,PNG or JPEG)"}
+                  <ThemedText type="defaultSemiBold" style={{textAlign: 'center', marginTop: 16}}>
+                    {uploading ? "Processing..." : "Upload a Lab Test Report File\nPDF, PNG or JPEG"}
                   </ThemedText>
                 </Pressable>
               </View>
@@ -123,8 +123,6 @@ export default function HomeScreen() {
     </ScreenTransitionView>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   titleContainer: {

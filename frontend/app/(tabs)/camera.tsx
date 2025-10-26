@@ -8,23 +8,14 @@ import { API_URL } from "@/src/config";
 import { useOcrStore } from "@/src/store/useOcrStore";
 import { router } from "expo-router";
 import ScreenTransitionView from "@/components/ScreenTransitionView";
-
-/*
- Camera tab:
-  • requests permission CHECK
-  • shows live preview CHECK
-  • takes a photo and shows a thumbnail CHECK
-  • works on iOS/Android CHECK
-  > Webcam takes the entire screen on PC <
-  • Desktop version needs fixing, perhaps modal window will recommend the user to utilize mobile camera for better quality or upload a file instead
-  */
-
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function CameraTab() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [taking, setTaking] = useState(false);
+  const [showHint, setShowHint] = useState(true);
   const setOcrFields = useOcrStore((s) => s.setFields);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
@@ -78,6 +69,9 @@ export default function CameraTab() {
   const takePhoto = async () => {
     if (!cameraRef.current) return;
     try {
+      if (showHint) {
+        setShowHint(false);
+      }
       setTaking(true);
       // return a uri
       const photo = await cameraRef.current.takePictureAsync({
@@ -126,18 +120,25 @@ export default function CameraTab() {
           <PrimaryButton onPress={takePhoto} label={taking ? "Processing..." : "Take & Scan"} disabled={taking} />
         </View>
 
-        {photoUri && (
-          <View style={styles.result}>
-            <ThemedText type="defaultSemiBold" style={{ marginBottom: 6 }}>
-              Last Photo
-            </ThemedText>
-            <Image
-              source={{ uri: photoUri }}
-              style={{ width: 160, height: 160, borderRadius: 12, backgroundColor: "#eee" }}
-              resizeMode="cover"
-            />
-          </View>
-        )}
+        <View style={styles.resultWrapper}>
+          {showHint && (
+            <View pointerEvents="none" style={styles.howToScan}>
+              <MaterialIcons name="document-scanner" size={128} color="#9BA1A6" />
+              <ThemedText style={styles.howToScanText}>
+                Use bright, even light and hold steady.
+              </ThemedText>
+            </View>
+          )}
+
+          {photoUri && (
+            <View style={styles.result}>
+              <ThemedText type="defaultSemiBold" style={styles.lastPhotoLabel}>
+                Last Photo
+              </ThemedText>
+              <Image source={{ uri: photoUri }} style={styles.lastPhotoImage} resizeMode="cover" />
+            </View>
+          )}
+        </View>
       </ThemedView>
     </ScreenTransitionView>
   );
@@ -162,7 +163,7 @@ function PrimaryButton({
       onPress={onPress}
       disabled={disabled}
       style={{
-        backgroundColor: "black",
+        backgroundColor: "#0891b2",
         opacity: disabled ? 0.5 : 1,
         paddingVertical: 12,
         paddingHorizontal: 18,
@@ -199,10 +200,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  resultWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 24,
+    width: 160,
+    minHeight: 200,
+    position: "relative",
+  },
   result: {
     alignItems: "center",
-    paddingBottom: 24,
     gap: 8,
+    zIndex: 1,
+  },
+  lastPhotoLabel: {
+    marginBottom: 6,
+  },
+  lastPhotoImage: {
+    width: 160,
+    height: 160,
+    borderRadius: 12,
+    backgroundColor: "#eee",
+  },
+  howToScan: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    gap: 8,
+  },
+  howToScanText: {
+    textAlign: "center",
+    color: "#fff",
+    maxWidth: 220,
   },
   guide: {
     position: "absolute",

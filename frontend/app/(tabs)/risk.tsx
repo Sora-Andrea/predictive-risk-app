@@ -467,6 +467,7 @@ export default function ExploreScreen() {
         </View>
       }
     >
+      {/*}
       <ThemedView style={styles.titleContainer}>
         <ThemedText
           type="title"
@@ -474,8 +475,9 @@ export default function ExploreScreen() {
           Calculate Diabetes Risk
         </ThemedText>
       </ThemedView>
+      {*/}
 
-      <ThemedText style={{ marginBottom: 16 }}>
+      <ThemedText style={{ marginBottom: 8 }}>
         Please enter your health data below.{"\n"}Try to fill in all the fields for better accuracy.
       </ThemedText>
 
@@ -484,7 +486,7 @@ export default function ExploreScreen() {
         <Field label="Age" value={age} onChangeText={setAge} inputMode="numeric" placeholder="e.g., 45" />
         <View style={styles.sexFieldContainer}>
           <ThemedText type="defaultSemiBold" style={styles.sexFieldLabel}>
-            *Sex
+            Sex
           </ThemedText>
           <View style={styles.sexRadioRow} accessibilityRole="radiogroup">
             {SEX_OPTIONS.map((option) => {
