@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Platform, StyleSheet, View, TextInput, Pressable } from "react-native";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { Platform, StyleSheet, View, TextInput, Pressable, LayoutChangeEvent } from "react-native";
 import { Image } from "expo-image";
 import axios from "axios";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -345,25 +345,39 @@ export default function ExploreScreen() {
   const [result, setResult] = useState<DiabetesResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [actionSectionOffset, setActionSectionOffset] = useState<number | null>(null);
   const demographicsComplete = age.trim().length > 0 && sex.trim().length > 0;
   const submitDisabled = loading || !demographicsComplete;
+
+  const handleActionSectionLayout = useCallback((event: LayoutChangeEvent) => {
+    setActionSectionOffset(event.nativeEvent.layout.y);
+  }, []);
+
+  const scrollToResults = useCallback(() => {
+    if (!scrollRef.current || actionSectionOffset == null) {
+      return;
+    }
+    // Auto Scroll offset amount here
+    const targetOffset = Math.max(actionSectionOffset + 200, 0);
+    scrollRef.current.scrollTo({ y: targetOffset, animated: true });
+  }, [actionSectionOffset]);
 
   useEffect(() => {
     if (!result && !error) {
       return;
     }
     const timeout = setTimeout(() => {
-      scrollRef.current?.scrollToEnd({ animated: true });
+      scrollToResults();
     }, 120);
     return () => clearTimeout(timeout);
-  }, [result, error]);
+  }, [result, error, scrollToResults]);
  
   const submit = async () => {
     setError(null);
     setResult(null);
     setLoading(true);
     setTimeout(() => {
-      scrollRef.current?.scrollToEnd({ animated: true });
+      scrollToResults();
     }, 80);
     try {
       const payload: Record<string, unknown> = {};
@@ -576,6 +590,7 @@ export default function ExploreScreen() {
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: "Transparent",
         }}
+        onLayout={handleActionSectionLayout}
       >
         {!demographicsComplete && (
           <ThemedText style={styles.demographicNotice}>
